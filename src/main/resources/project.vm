@@ -2,13 +2,13 @@
   <head>
     <title>$i18n.getText("fecruircbot.project.label")</title>
     <meta name="decorator" content="atl.admin" />
-    <meta name="application-base-url" content="$applicationProperties.getBaseUrl()">
+    <meta name="application-base-url" content="$base-url">
     $webResourceManager.requireResource("com.github.j5ik2o.fecru-irc-bot:project-resources")
   </head>
   <body>
   	<h1>$i18n.getText("fecruircbot.project.label")</h1>
     <form id="project" class="aui">
-    <input type="hidden" id="projectId" name="projectId" value="$projectId"/>
+    <input type="hidden" id="projectKey" name="projectKey" value="$projectKey"/>
       <div>
         <label for="enable">$i18n.getText("fecruircbot.project.enable.label")</label>
         <input type="checkbox" id="enable" name="enable">

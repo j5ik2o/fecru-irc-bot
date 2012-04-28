@@ -1,6 +1,6 @@
 AJS.toInit(function() {
     var baseUrl = AJS.$("meta[name='application-base-url']").attr("content");
-    var projectId = AJS.$("#projectId").attr("value");
+    var projectKey = AJS.$("#projectKey").attr("value");
     function populateForm() {
     	AJS.$.ajax({
             url: baseUrl + "/rest/fecru-irc-bot/1.0/globalConfig",
@@ -22,7 +22,7 @@ AJS.toInit(function() {
             }
         });
         AJS.$.ajax({
-            url: baseUrl + "/rest/fecru-irc-bot/1.0/channelConfig/" + projectId,
+            url: baseUrl + "/rest/fecru-irc-bot/1.0/channelConfig/" + projectKey,
             dataType: "json",
             success: function(config) {   
                 if (config.enable){
@@ -42,7 +42,7 @@ AJS.toInit(function() {
     
     function updateConfig() {
         AJS.$.ajax({
-            url: baseUrl + "/rest/fecru-irc-bot/1.0/channelConfig/" + projectId,
+            url: baseUrl + "/rest/fecru-irc-bot/1.0/channelConfig/" + projectKey,
             type: "PUT",
             contentType: "application/json",
             data: '{ "enable": "' + AJS.$("#enable").attr("checked") +

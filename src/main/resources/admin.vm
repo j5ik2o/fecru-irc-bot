@@ -2,7 +2,7 @@
   <head>
     <title>$i18n.getText("fecruircbot.admin.label")</title>
     <meta name="decorator" content="atl.admin" />
-    <meta name="application-base-url" content="$applicationProperties.getBaseUrl()">
+    <meta name="application-base-url" content="$base-url">
     $webResourceManager.requireResource("com.github.j5ik2o.fecru-irc-bot:admin-resources")
   </head>
   <body>

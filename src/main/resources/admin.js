@@ -1,6 +1,6 @@
 AJS.toInit(function() {
     var baseUrl = AJS.$("meta[name='application-base-url']").attr("content");
-    
+
     function populateForm() {
         AJS.$.ajax({
             url: baseUrl + "/rest/fecru-irc-bot/1.0/globalConfig",
