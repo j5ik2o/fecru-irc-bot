@@ -31,13 +31,13 @@ class CrucibleEventListener
   applicationProperties: ApplicationProperties,
   reviewService: ReviewService,
   projectService: ProjectService,
-  pluginSettingsFactory: PluginSettingsFactory
+  protected val pluginSettingsFactory: PluginSettingsFactory
   )
-  extends DisposableBean with InitializingBean {
+  extends DisposableBean with InitializingBean with IrcConfigAccess {
+
+  protected val name = "cru-irc-boot"
 
   eventPublisher.register(this)
-
-  private val LOGGER = LoggerFactory.getLogger("atlassian.plugin")
 
   private def getReviewUrl(reviewId: PermId[ReviewData]): String =
     applicationProperties.getBaseUrl + "/cru/" + reviewId.getId
@@ -45,86 +45,12 @@ class CrucibleEventListener
   private def getProjectUrl(projectKey: String): String =
     applicationProperties.getBaseUrl + "/project/" + projectKey
 
-  private def getChannelName(settings: PluginSettings, projectId: String): String = {
-    settings.get(classOf[IrcBotChannelConfig].getName + "_" + projectId + ".channelName").asInstanceOf[String]
-  }
-
-  private def isIrcBotChannelEnable(settings: PluginSettings, projectId: String): Boolean = {
-    settings.get(classOf[IrcBotChannelConfig].getName + "_" + projectId + ".enable").asInstanceOf[String].toBoolean
-  }
-
-  private def isIrcBotChannelNotice(settings: PluginSettings, projectId: String): Boolean = {
-    settings.get(classOf[IrcBotChannelConfig].getName + "_" + projectId + ".notice").asInstanceOf[String].toBoolean
-  }
-
-  private def isIrcBotEnable(settings: PluginSettings): Boolean = {
-    val enable: Boolean = settings.get(classOf[IrcBotGlobalConfig].getName + ".enable").asInstanceOf[String].toBoolean
-    enable
-  }
-
-  private def getIrcServerName(settings: PluginSettings): String = {
-    settings.get(classOf[IrcBotGlobalConfig].getName + ".ircServerName").asInstanceOf[String]
-  }
-
-  private def getIrcServerPort(settings: PluginSettings): Option[Int] = {
-    val ircServerPort = settings.get(classOf[IrcBotGlobalConfig].getName + ".ircServerPort").asInstanceOf[String]
-    if (ircServerPort.isEmpty == false) {
-      Some(ircServerPort.toInt)
-    }else{
-      None
-    }
-  }
 
   private def getProjectDataByReviewId(reviewId: PermId[ReviewData]): ProjectData = {
     val review: DetailedReviewData = reviewService.getReviewDetails(reviewId)
     projectService.getProject(review.getProjectKey)
   }
 
-
-  private def autoConnect(settings: PluginSettings) {
-    if (pircBot.isConnected) {
-      return
-    }
-    val ircServerName: String = getIrcServerName(settings)
-    LOGGER.debug("irc server name = " + ircServerName)
-    val ircServerPort = getIrcServerPort(settings)
-    LOGGER.debug("irc server port = " + ircServerPort)
-    if (ircServerPort != null && ircServerPort.getOrElse(0) != 0) {
-      pircBot.connect(ircServerName, ircServerPort.get)
-    } else {
-      pircBot.connect(ircServerName)
-    }
-  }
-
-  private def sendMessages(projectKey: String, title: String, messages: List[String]) {
-    sendMessage(projectKey, title)
-    messages.foreach { message =>
-      sendMessage(projectKey, message)
-    }
-  }
-
-  private def sendMessage(projectKey: String, message: String) {
-    val settings: PluginSettings = pluginSettingsFactory.createGlobalSettings
-    if (isIrcBotEnable(settings) == false || isIrcBotChannelEnable(settings, projectKey) == false) {
-      return
-    }
-    try {
-      autoConnect(settings)
-      val channelName: String = getChannelName(settings, projectKey)
-      pircBot.joinChannel(channelName)
-      pircBot.sendMessage(channelName, message)
-    } catch {
-      case e: NickAlreadyInUseException => {
-        LOGGER.error("catch Exception", e)
-      }
-      case e: IOException => {
-        LOGGER.error("catch Exception", e)
-      }
-      case e: IrcException => {
-        LOGGER.error("catch Exception", e)
-      }
-    }
-  }
 
   @EventListener
   def onReviewCreate(event: ReviewCreatedEvent) {
@@ -140,12 +66,14 @@ class CrucibleEventListener
     sendMessage(getProjectDataByReviewId(reviewId).getKey, "updated")
   }
 
-  private def getFormattedUser(userData: UserData): String = {
-    "%s".format(userData.getDisplayName)
+  private lazy val formattedUser = {
+    userData: UserData =>
+      "%s".format(userData.getDisplayName)
   }
 
-  private def getFormattedCommentText(commentData: CommentData): String = {
-    "%s".format(commentData.getMessage)
+  private lazy val formattedCommentText = {
+    commentData: CommentData =>
+      "%s".format(commentData.getMessage)
   }
 
   @EventListener
@@ -156,9 +84,11 @@ class CrucibleEventListener
     sendMessage(getProjectDataByReviewId(reviewId).getKey, "コメントが投稿されました")
   }
 
-  @EventListener def onReviewStateChange(event: ReviewStateChangedEvent) {
+  @EventListener
+  def onReviewStateChange(event: ReviewStateChangedEvent) {
     val reviewId = event.getReviewId
-    sendMessage(getProjectDataByReviewId(reviewId).getKey, "status moved from " + event.getOldState.name + " to " + event.getNewState.name)
+    sendMessage(getProjectDataByReviewId(reviewId).getKey,
+      "status moved from " + event.getOldState.name + " to " + event.getNewState.name)
   }
 
   def destroy {
@@ -171,6 +101,5 @@ class CrucibleEventListener
     eventPublisher.register(this)
   }
 
-  private final val pircBot: PircBot = new PircBot {
-  }
+
 }
