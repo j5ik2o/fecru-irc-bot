@@ -27,13 +27,13 @@ class IrcBotGlobalConfigResource
   transactionTemplate: TransactionTemplate
   ) {
 
-  private val LOGGER: Logger = LoggerFactory.getLogger("atlassian.plugin")
+  private val LOGGER = LoggerFactory.getLogger("atlassian.plugin")
 
   @GET
   @Produces(Array(MediaType.APPLICATION_JSON))
   def get(@Context request: HttpServletRequest): Response = {
     LOGGER.debug(String.format("get : start(%s)", request))
-    val username: String = userManager.getRemoteUsername(request)
+    val username = userManager.getRemoteUsername(request)
     if (username != null && !userManager.isSystemAdmin(username)) {
       LOGGER.debug(String.format("get : finished(%s)", request))
       return Response.status(Status.UNAUTHORIZED).build
@@ -42,8 +42,7 @@ class IrcBotGlobalConfigResource
       def doInTransaction = {
         val settings = pluginSettingsFactory.createGlobalSettings
         val config = new IrcBotGlobalConfig
-        val enable = settings.get(classOf[IrcBotGlobalConfig].getName + ".enable").asInstanceOf[String].toBoolean
-        config.enable = enable
+        config.enable = settings.get(classOf[IrcBotGlobalConfig].getName + ".enable").asInstanceOf[String].toBoolean
         config.ircServerName = settings.get(classOf[IrcBotGlobalConfig].getName + ".ircServerName").asInstanceOf[String]
         val ircServerPort = settings.get(classOf[IrcBotGlobalConfig].getName + ".ircServerPort").asInstanceOf[String]
         if (ircServerPort != null) {

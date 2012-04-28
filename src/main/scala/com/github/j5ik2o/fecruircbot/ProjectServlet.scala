@@ -31,14 +31,12 @@ class ProjectServlet
       return
     }
     import scala.collection.JavaConverters._
-
-    var context = Map.empty[String, AnyRef]
-
     val key = request.getParameter("key")
 
+    var context = Map.empty[String, AnyRef]
     response.setContentType("text/html;charset=utf-8")
     context += ("projectKey" -> key)
-    val baseUriKey: String = "base-url"
+    val baseUriKey = "base-url"
     if (isDebug == false) {
       context += (baseUriKey -> applicationProperties.getBaseUrl)
     }

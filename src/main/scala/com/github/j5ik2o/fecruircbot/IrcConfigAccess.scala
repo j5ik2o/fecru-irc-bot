@@ -5,14 +5,6 @@ import org.jibble.pircbot.{PircBot, IrcException, NickAlreadyInUseException}
 import org.slf4j.LoggerFactory
 import com.atlassian.sal.api.pluginsettings.{PluginSettingsFactory, PluginSettings}
 
-/**
- * Created with IntelliJ IDEA.
- * User: junichi
- * Date: 12/04/29
- * Time: 0:27
- * To change this template use File | Settings | File Templates.
- */
-
 trait IrcConfigAccess {
 
   protected val LOGGER = LoggerFactory.getLogger("atlassian.plugin")

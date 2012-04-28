@@ -10,7 +10,6 @@ import javax.ws.rs.Produces
 import javax.ws.rs.core.Context
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
-import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import com.atlassian.sal.api.pluginsettings.PluginSettings
 import com.atlassian.sal.api.pluginsettings.PluginSettingsFactory

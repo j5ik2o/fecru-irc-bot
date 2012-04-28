@@ -1,10 +1,5 @@
 package com.github.j5ik2o.fecruircbot
 
-import java.io.IOException
-import org.jibble.pircbot.IrcException
-import org.jibble.pircbot.NickAlreadyInUseException
-import org.jibble.pircbot.PircBot
-import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.DisposableBean
 import org.springframework.beans.factory.InitializingBean
 import com.atlassian.crucible.event.ReviewCommentEvent
@@ -22,7 +17,6 @@ import com.atlassian.crucible.spi.services.ReviewService
 import com.atlassian.event.api.EventListener
 import com.atlassian.event.api.EventPublisher
 import com.atlassian.sal.api.ApplicationProperties
-import com.atlassian.sal.api.pluginsettings.PluginSettings
 import com.atlassian.sal.api.pluginsettings.PluginSettingsFactory
 
 class CrucibleEventListener
@@ -35,7 +29,7 @@ class CrucibleEventListener
   )
   extends DisposableBean with InitializingBean with IrcConfigAccess {
 
-  protected val name = "cru-irc-boot"
+  protected val name = "cru-irc-oot"
 
   eventPublisher.register(this)
 

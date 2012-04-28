@@ -6,19 +6,21 @@ import com.atlassian.fisheye.event.CommitEvent
 import com.atlassian.fisheye.spi.services.RevisionDataService
 import com.atlassian.sal.api.ApplicationProperties
 import org.jibble.pircbot.PircBot
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.DisposableBean
 import org.springframework.beans.factory.InitializingBean
+import com.atlassian.sal.api.pluginsettings.PluginSettingsFactory
 
 class FishEyeEventListener
 (
-  eventPublisher: EventPublisher, applicationProperties: ApplicationProperties, revisionDataService: RevisionDataService
-  ) extends DisposableBean with InitializingBean {
+  eventPublisher: EventPublisher,
+  applicationProperties: ApplicationProperties,
+  revisionDataService: RevisionDataService ,
+  protected val pluginSettingsFactory: PluginSettingsFactory
+  ) extends DisposableBean with InitializingBean with IrcConfigAccess {
+
+  protected val name = "fe-irc-bot"
 
   eventPublisher.register(this)
-
-  private val LOGGER = LoggerFactory.getLogger("atlassian.plugin")
 
   @EventListener
   def onCommit(event: CommitEvent) {

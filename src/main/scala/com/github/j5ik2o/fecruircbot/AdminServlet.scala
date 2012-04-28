@@ -31,11 +31,10 @@ class AdminServlet
 
     var context = Map.empty[String, AnyRef]
 
-    val baseUriKey: String = "base-url"
+    val baseUriKey = "base-url"
     if (isDebug == false) {
       context += (baseUriKey -> applicationProperties.getBaseUrl)
-    }
-    else {
+    } else {
       context += (baseUriKey -> "http://localhost:3990/fecru")
     }
     response.setContentType("text/html;charset=utf-8")
@@ -51,7 +50,7 @@ class AdminServlet
 
   private def getUri(request: HttpServletRequest): URI = {
     LOGGER.debug(String.format("getUri : start(%s)", request))
-    val builder: StringBuffer = request.getRequestURL
+    val builder = request.getRequestURL
     if (request.getQueryString != null) {
       builder.append("?")
       builder.append(request.getQueryString)
