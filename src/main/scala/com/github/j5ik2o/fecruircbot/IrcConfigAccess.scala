@@ -12,13 +12,13 @@ trait IrcConfigAccess {
   protected val name: String
 
   protected def getChannelName(settings: PluginSettings, projectId: String) =
-    settings.get(classOf[IrcBotChannelConfig].getName + "_" + projectId + ".channelName").asInstanceOf[String]
+    settings.get(classOf[IrcBotProjectChannelConfig].getName + "_" + projectId + ".channelName").asInstanceOf[String]
 
   protected def isIrcBotChannelEnable(settings: PluginSettings, projectId: String) =
-    settings.get(classOf[IrcBotChannelConfig].getName + "_" + projectId + ".enable").asInstanceOf[String].toBoolean
+    settings.get(classOf[IrcBotProjectChannelConfig].getName + "_" + projectId + ".enable").asInstanceOf[String].toBoolean
 
   protected def isIrcBotChannelNotice(settings: PluginSettings, projectId: String) =
-    settings.get(classOf[IrcBotChannelConfig].getName + "_" + projectId + ".notice").asInstanceOf[String].toBoolean
+    settings.get(classOf[IrcBotProjectChannelConfig].getName + "_" + projectId + ".notice").asInstanceOf[String].toBoolean
 
   protected def isIrcBotEnable(settings: PluginSettings) =
     settings.get(classOf[IrcBotGlobalConfig].getName + ".enable").asInstanceOf[String].toBoolean
@@ -56,22 +56,22 @@ trait IrcConfigAccess {
     }
   }
 
-  protected def sendMessages(projectKey: String, title: String, messages: List[String]) {
-    sendMessage(projectKey, title)
+  protected def sendMessages(projectKey: String, messages: Seq[String]) {
     messages.foreach {
       message =>
         sendMessage(projectKey, message)
     }
   }
 
-  protected def sendMessage(projectKey: String, message: String) {
+  protected def sendMessage(key: String, message: String) {
     val settings = pluginSettingsFactory.createGlobalSettings
-    if (isIrcBotEnable(settings) == false || isIrcBotChannelEnable(settings, projectKey) == false) {
+    if (isIrcBotEnable(settings) == false ||
+      isIrcBotChannelEnable(settings, key) == false) {
       return
     }
     try {
       autoConnect(settings)
-      val channelName = getChannelName(settings, projectKey)
+      val channelName = getChannelName(settings, key)
       pircBot.joinChannel(channelName)
       pircBot.sendMessage(channelName, message)
     } catch {
@@ -84,7 +84,7 @@ trait IrcConfigAccess {
     }
   }
 
-  private final val pircBot: PircBot = new PircBot {
+  private lazy val pircBot = new PircBot {
     setName(name)
   }
 

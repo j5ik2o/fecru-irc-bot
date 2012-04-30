@@ -1,19 +1,19 @@
 AJS.toInit(function() {
     var baseUrl = AJS.$("meta[name='application-base-url']").attr("content");
-    var key = "cru_" + AJS.$("#projectKey").attr("value");
+    var key = "fe_" + AJS.$("#key").attr("value");
     function populateForm() {
     	AJS.$.ajax({
-            url: baseUrl + "/rest/fecru-irc-bot/1.0/projectChannelConfig",
+            url: baseUrl + "/rest/fecru-irc-bot/1.0/repositoryChannelConfig",
             dataType: "json",
             success: function(config) {
             	if (config.enable){
-                	AJS.$("#project").removeAttr("disabled");
+                	AJS.$("#repository").removeAttr("disabled");
                 	AJS.$("#enable").removeAttr("disabled");
                 	AJS.$("#notice").removeAttr("disabled");
                 	AJS.$("#channelName").removeAttr("disabled");
                 	AJS.$("#submit").removeAttr("disabled");	
                 }else{
-                	AJS.$("#project").attr("disabled", "disabled");
+                	AJS.$("#repository").attr("disabled", "disabled");
                 	AJS.$("#enable").attr("disabled", "disabled");
                 	AJS.$("#notice").attr("disabled", "disabled");
                 	AJS.$("#channelName").attr("disabled", "disabled");
@@ -22,7 +22,7 @@ AJS.toInit(function() {
             }
         });
         AJS.$.ajax({
-            url: baseUrl + "/rest/fecru-irc-bot/1.0/projectChannelConfig/" + key,
+            url: baseUrl + "/rest/fecru-irc-bot/1.0/repositoryChannelConfig/" + key,
             dataType: "json",
             success: function(config) {   
                 if (config.enable){
@@ -42,7 +42,7 @@ AJS.toInit(function() {
     
     function updateConfig() {
         AJS.$.ajax({
-            url: baseUrl + "/rest/fecru-irc-bot/1.0/projectChannelConfig/" + key,
+            url: baseUrl + "/rest/fecru-irc-bot/1.0/repositoryChannelConfig/" + key,
             type: "PUT",
             contentType: "application/json",
             data: '{ "enable": "' + AJS.$("#enable").attr("checked") +
@@ -55,7 +55,7 @@ AJS.toInit(function() {
     populateForm();
     pageModified = false;
     
-    AJS.$("#project").submit(function(e) {
+    AJS.$("#repository").submit(function(e) {
         e.preventDefault();
         updateConfig();
     });

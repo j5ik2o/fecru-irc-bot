@@ -20,7 +20,7 @@ class ProjectServlet
   )
   extends HttpServlet {
 
-  val LOGGER = LoggerFactory.getLogger("atlassian.plugin")
+  protected val LOGGER = LoggerFactory.getLogger("atlassian.plugin")
 
   override def doGet(request: HttpServletRequest, response: HttpServletResponse) {
     LOGGER.debug(String.format("doGet : start(%s, %s)", request, response))
@@ -35,7 +35,7 @@ class ProjectServlet
 
     var context = Map.empty[String, AnyRef]
     response.setContentType("text/html;charset=utf-8")
-    context += ("projectKey" -> key)
+    context += ("key" -> key)
     val baseUriKey = "base-url"
     if (isDebug == false) {
       context += (baseUriKey -> applicationProperties.getBaseUrl)
@@ -61,7 +61,7 @@ class ProjectServlet
       builder.append(request.getQueryString)
     }
     LOGGER.debug("getUri : finshed")
-    return URI.create(builder.toString)
+    URI.create(builder.toString)
   }
 
   private var isDebug: Boolean = true

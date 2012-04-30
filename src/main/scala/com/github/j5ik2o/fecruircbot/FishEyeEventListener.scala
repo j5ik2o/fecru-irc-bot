@@ -9,6 +9,7 @@ import org.jibble.pircbot.PircBot
 import org.springframework.beans.factory.DisposableBean
 import org.springframework.beans.factory.InitializingBean
 import com.atlassian.sal.api.pluginsettings.PluginSettingsFactory
+import java.util.StringTokenizer
 
 class FishEyeEventListener
 (
@@ -22,21 +23,33 @@ class FishEyeEventListener
 
   eventPublisher.register(this)
 
+  def getKey(repositoryName:String):String =
+    "fe_%s".format(repositoryName)
+
   @EventListener
   def onCommit(event: CommitEvent) {
-    LOGGER.info("event = " + event.toString)
+    val repoName = event.getRepositoryName()
+
+    val cs = revisionDataService.getChangeset(repoName, event.getChangeSetId())
+
+    sendMessages(
+      getKey(event.getRepositoryName),
+      List(
+        "%s リポジトリにコミットされました".format(repoName),
+        "Comment: %s".format(cs.getComment),
+        "Author: %s".format(cs.getAuthor),
+        "Branche: %s".format(cs.getBranch),
+        "Changeset: %s/changelog/%s/cs=%s".format(applicationProperties.getBaseUrl, repoName, event.getChangeSetId)
+      ).toSeq
+    )
   }
 
   def destroy {
-    LOGGER.debug("Unregister commit event listener")
     eventPublisher.unregister(this)
   }
 
   def afterPropertiesSet {
-    LOGGER.debug("Register commit event listener")
     eventPublisher.register(this)
   }
 
-  private final val pircBot: PircBot = new PircBot {
-  }
 }

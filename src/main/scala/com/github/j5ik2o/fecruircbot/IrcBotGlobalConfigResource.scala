@@ -18,7 +18,6 @@ import com.atlassian.sal.api.transaction.TransactionCallback
 import com.atlassian.sal.api.transaction.TransactionTemplate
 import com.atlassian.sal.api.user.UserManager
 
-
 @Path("/globalConfig")
 class IrcBotGlobalConfigResource
 (
@@ -27,7 +26,7 @@ class IrcBotGlobalConfigResource
   transactionTemplate: TransactionTemplate
   ) {
 
-  private val LOGGER = LoggerFactory.getLogger("atlassian.plugin")
+  protected val LOGGER = LoggerFactory.getLogger("atlassian.plugin")
 
   @GET
   @Produces(Array(MediaType.APPLICATION_JSON))
