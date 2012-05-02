@@ -8,7 +8,7 @@
   <body>
   	<h1>$i18n.getText("fecruircbot.project.label")</h1>
     <form id="project" class="aui">
-    <input type="hidden" id="projectKey" name="projectKey" value="$projectKey"/>
+      <input type="hidden" id="key" name="key" value="$key"/>
       <div>
         <label for="enable">$i18n.getText("fecruircbot.project.enable.label")</label>
         <input type="checkbox" id="enable" name="enable">

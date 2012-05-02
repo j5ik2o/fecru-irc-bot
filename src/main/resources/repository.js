@@ -1,9 +1,9 @@
 AJS.toInit(function() {
     var baseUrl = AJS.$("meta[name='application-base-url']").attr("content");
-    var key = "fe_" + AJS.$("#key").attr("value");
+    var key = AJS.$("#key").attr("value");
     function populateForm() {
     	AJS.$.ajax({
-            url: baseUrl + "/rest/fecru-irc-bot/1.0/repositoryChannelConfig",
+            url: baseUrl + "/rest/fecru-irc-bot/1.0/globalConfig",
             dataType: "json",
             success: function(config) {
             	if (config.enable){

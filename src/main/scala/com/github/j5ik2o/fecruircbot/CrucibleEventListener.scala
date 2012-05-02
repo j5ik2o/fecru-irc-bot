@@ -5,14 +5,16 @@ import org.springframework.beans.factory.InitializingBean
 import com.atlassian.event.api.EventListener
 import com.atlassian.event.api.EventPublisher
 import com.atlassian.sal.api.ApplicationProperties
-import com.atlassian.sal.api.pluginsettings.PluginSettingsFactory
-import com.atlassian.crucible.spi.services.{ReviewService, ProjectService}
 import com.atlassian.crucible.event._
 import scala.collection.JavaConverters._
 import com.atlassian.crucible.spi.PermId
 import java.text.SimpleDateFormat
 import scala.Some
 import com.atlassian.crucible.spi.data._
+import com.atlassian.sal.api.pluginsettings.{PluginSettings, PluginSettingsFactory}
+import scala.Predef._
+import com.atlassian.crucible.spi.services.{NotFoundException, ReviewService, ProjectService}
+import scala.util.control.Exception._
 
 class CrucibleEventListener
 (
@@ -45,28 +47,40 @@ class CrucibleEventListener
       commentData.getMessage
     )
 
-  private def formattedProject(projectData: ProjectData) =
-    "[%s:%s]".format(projectData.getKey, projectData.getName)
+  private def formattedProject(reviewData: ReviewData) =
+    "[%s]".format(reviewData.getPermaId.getId)
 
   private def formattedCommentMessage
   (projectData: ProjectData,
    reviewData: ReviewData,
-   commentData: CommentData, title: String) =
-    Seq(
-      "%s %s".format(formattedProject(projectData), title),
-      formattedComment(commentData),
-      getReviewUrl(reviewData.getPermaId)
-    )
+   commentId: PermId[CommentData],
+   title: String) = {
+    val commentDataOption = catching(classOf[NotFoundException]) opt reviewService.getComment(commentId)
+    commentDataOption.map {
+      commentData =>
+        Seq(
+          "%s %s".format(formattedProject(reviewData), title),
+          "CommentId: %s".format(commentId.getId),
+          "User: %s".format(formattedUser(commentData.getUser)),
+          formattedComment(commentData),
+          getReviewUrl(reviewData.getPermaId) + "#c" + commentId.getId.split(":")(1)
+        )
+    } getOrElse {
+      Seq(
+        "%s %s".format(formattedProject(reviewData), title),
+        "CommentId: %s".format(commentId.getId),
+        getReviewUrl(reviewData.getPermaId)
+      )
+    }
+  }
 
-
-  val dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss")
 
   private def formattedReviewMessage
   (projectData: ProjectData,
    detailedReviewData: DetailedReviewData,
    title: String) = {
     val r = List(
-      Some("%s %s".format(formattedProject(projectData), title)),
+      Some("%s %s".format(formattedProject(detailedReviewData), title)),
       if (detailedReviewData.getPermaId != null)
         Some("Id: %s".format(detailedReviewData.getPermaId.getId))
       else
@@ -111,7 +125,7 @@ class CrucibleEventListener
    reviewNewDataState: ReviewData.State,
    title: String) =
     Seq(
-      "%s %s".format(formattedProject(projectData), title),
+      "%s %s".format(formattedProject(reviewData), title),
       "%s から %s に変更しました".format(
         reviewOldDataState.name(),
         reviewNewDataState.name()
@@ -125,7 +139,7 @@ class CrucibleEventListener
    reviewerData: ReviewerData,
    title: String) =
     Seq(
-      "%s %s".format(formattedProject(projectData), title),
+      "%s %s".format(formattedProject(reviewData), title),
       "%s(%s)はレビューを完了させました。".format(
         reviewerData.getDisplayName,
         reviewerData.getUserName
@@ -153,55 +167,68 @@ class CrucibleEventListener
         )
       }
     }
-    val result = "%s %s".format(formattedProject(projectData), title) ::
+    val result = "%s %s".format(formattedProject(reviewData), title) ::
       (buildMessages("追加リビジョン:", addedRevisions).flatten.toList ++
         buildMessages("削除リビジョン:", removedRevisions).flatten.toList)
     (result.:+(getReviewUrl(reviewData.getPermaId))).toSeq
   }
 
-
   @EventListener
-  def onReviewComment(event: CommentCreatedEvent) {
+  def onReviewCommentCreate(event: CommentCreatedEvent) {
     val reviewData = reviewService.getReviewDetails(event.getReviewId)
     val projectData = projectService.getProject(reviewData.getProjectKey)
-    val commentData = reviewService.getComment(event.getCommentId)
     sendMessages(
-      getKey(projectData),
+      projectData.getKey,
       formattedCommentMessage(
         projectData,
         reviewData,
-        commentData,
+        event.getCommentId,
         "コメントが投稿されました"))
   }
 
   @EventListener
-  def onReviewComment(event: CommentDeletedEvent) {
+  def onReviewCommentDeleted(event: CommentDeletedEvent) {
     val reviewData = reviewService.getReviewDetails(event.getReviewId)
     val projectData = projectService.getProject(reviewData.getProjectKey)
-    val commentData = reviewService.getComment(event.getCommentId)
     sendMessages(
-      getKey(projectData),
+      projectData.getKey,
       formattedCommentMessage(
         projectData,
         reviewData,
-        commentData,
+        event.getCommentId,
         "コメントが削除されました"))
   }
 
-  private def getKey(projectData: ProjectData): String =
-    "cru_%s".format(projectData.getKey)
+  protected def isIrcBotChannelEnable(settings: PluginSettings, key: String) = {
+    val r = settings.get(classOf[IrcBotProjectChannelConfig].getName + "_" + key + ".enable")
+    if (r != null)
+      r.asInstanceOf[String].toBoolean
+    else
+      false
+  }
+
+  protected def getIrcBotChannelName(settings: PluginSettings, key: String) =
+    settings.get(classOf[IrcBotProjectChannelConfig].getName + "_" + key + ".channelName").asInstanceOf[String]
+
+
+  protected def isIrcBotChannelNotice(settings: PluginSettings, key: String) = {
+    val r = settings.get(classOf[IrcBotProjectChannelConfig].getName + "_" + key + ".notice")
+    if (r != null)
+      r.asInstanceOf[String].toBoolean
+    else
+      false
+  }
 
   @EventListener
-  def onReviewComment(event: CommentUpdatedEvent) {
+  def onReviewCommentUpdated(event: CommentUpdatedEvent) {
     val reviewData = reviewService.getReviewDetails(event.getReviewId)
     val projectData = projectService.getProject(reviewData.getProjectKey)
-    val commentData = reviewService.getComment(event.getCommentId)
     sendMessages(
-      getKey(projectData),
+      projectData.getKey,
       formattedCommentMessage(
         projectData,
         reviewData,
-        commentData,
+        event.getCommentId,
         "コメントが更新されました"))
   }
 
@@ -210,7 +237,7 @@ class CrucibleEventListener
     val reviewData = reviewService.getReviewDetails(event.getReviewId)
     val projectData = projectService.getProject(reviewData.getProjectKey)
     sendMessages(
-      getKey(projectData),
+      projectData.getKey,
       formattedReviewStateChangeMessage(
         projectData, reviewData,
         event.getOldState,
@@ -223,7 +250,7 @@ class CrucibleEventListener
     val reviewData = reviewService.getReviewDetails(event.getReviewId)
     val projectData = projectService.getProject(reviewData.getProjectKey)
     sendMessages(
-      getKey(projectData),
+      projectData.getKey,
       formattedReviewMessage(
         projectData,
         reviewData,
@@ -235,7 +262,7 @@ class CrucibleEventListener
     val reviewData = reviewService.getReviewDetails(event.getReviewId)
     val projectData = projectService.getProject(reviewData.getProjectKey)
     sendMessages(
-      getKey(projectData),
+      projectData.getKey,
       formattedReviewMessage(
         projectData,
         reviewData,
@@ -247,7 +274,7 @@ class CrucibleEventListener
     val reviewData = reviewService.getReviewDetails(event.getReviewId)
     val projectData = projectService.getProject(reviewData.getProjectKey)
     sendMessages(
-      getKey(projectData),
+      projectData.getKey,
       formattedReviewMessage(
         projectData,
         reviewData,
@@ -259,7 +286,7 @@ class CrucibleEventListener
     val reviewData = reviewService.getReviewDetails(event.getReviewId)
     val projectData = projectService.getProject(reviewData.getProjectKey)
     sendMessages(
-      getKey(projectData),
+      projectData.getKey,
       formattedReviewerCompletedMessage(
         projectData,
         reviewData,
@@ -272,7 +299,7 @@ class CrucibleEventListener
     val reviewData = reviewService.getReviewDetails(event.getReviewId)
     val projectData = projectService.getProject(reviewData.getProjectKey)
     sendMessages(
-      getKey(projectData),
+      projectData.getKey,
       formattedReviewerCompletedMessage(
         projectData,
         reviewData,
@@ -284,12 +311,13 @@ class CrucibleEventListener
   def onReviewItemRevisionDataChange(event: ReviewItemRevisionDataChangedEvent) {
     val reviewData = reviewService.getReviewDetails(event.getReviewId)
     val projectData = projectService.getProject(reviewData.getProjectKey)
+
     import scala.collection.JavaConverters._
 
     val addedRevisionsAsJava = event.getAddedRevisions
     val removedRevisionsAsJava = event.getRemovedRevisions
     sendMessages(
-      getKey(projectData),
+      projectData.getKey,
       formattedonReviewItemRevisionDataChangeMessage(
         projectData,
         reviewData,
@@ -304,26 +332,29 @@ class CrucibleEventListener
     val reviewData = reviewService.getReviewDetails(event.getReviewId)
     val projectData = projectService.getProject(reviewData.getProjectKey)
     sendMessages(
-      getKey(projectData),
+      projectData.getKey,
       formattedReviewMessage(
         projectData,
         reviewData,
         "すべてのレビューアがレビューを完了させました"))
   }
 
-
   @EventListener
   def onAllReviewersNoLongerCompleted(event: AllReviewersNoLongerCompletedEvent) {
     val reviewData = reviewService.getReviewDetails(event.getReviewId)
     val projectData = projectService.getProject(reviewData.getProjectKey)
     sendMessages(
-      getKey(projectData),
+      projectData.getKey,
       formattedReviewMessage(
         projectData,
         reviewData,
         "すべてのレビューアがレビューを久しく完了していません"))
   }
 
+
+  def onMessage(channel: String, sender: String, login: String, hostname: String, message: String) {
+    LOGGER.info("c = %s, s = %s, l = %s, h = %s, m = %s".format(channel, sender, login, hostname, message))
+  }
 
   def destroy {
     eventPublisher.unregister(this)
