@@ -10,9 +10,7 @@ import javax.ws.rs.core.Context
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
 import javax.ws.rs.core.Response.Status
-import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import com.atlassian.sal.api.pluginsettings.PluginSettings
 import com.atlassian.sal.api.pluginsettings.PluginSettingsFactory
 import com.atlassian.sal.api.transaction.TransactionCallback
 import com.atlassian.sal.api.transaction.TransactionTemplate
@@ -41,8 +39,10 @@ class IrcBotGlobalConfigResource
       def doInTransaction = {
         val settings = pluginSettingsFactory.createGlobalSettings
         val config = new IrcBotGlobalConfig
-        config.enable = settings.get(classOf[IrcBotGlobalConfig].getName + ".enable").asInstanceOf[String].toBoolean
-        config.ircServerName = settings.get(classOf[IrcBotGlobalConfig].getName + ".ircServerName").asInstanceOf[String]
+        val enable = settings.get(classOf[IrcBotGlobalConfig].getName + ".enable")
+        config.enable = if (enable != null) enable.asInstanceOf[String].toBoolean else false
+        val ircServerName = settings.get(classOf[IrcBotGlobalConfig].getName + ".ircServerName")
+        config.ircServerName = if (ircServerName != null) ircServerName.asInstanceOf[String] else ""
         val ircServerPort = settings.get(classOf[IrcBotGlobalConfig].getName + ".ircServerPort").asInstanceOf[String]
         if (ircServerPort != null) {
           config.ircServerPort = ircServerPort.toInt

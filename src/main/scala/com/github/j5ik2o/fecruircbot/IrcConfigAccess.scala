@@ -105,7 +105,7 @@ trait IrcConfigAccess {
 
   def onMessage(channel: String, sender: String, login: String, hostname: String, message: String)
 
-  private lazy val pircBot = new PircBot {
+  protected lazy val pircBot = new PircBot {
     setName(name)
 
     override def onMessage(channel: String, sender: String, login: String, hostname: String, message: String) {

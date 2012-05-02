@@ -6,15 +6,14 @@ import com.atlassian.event.api.EventListener
 import com.atlassian.event.api.EventPublisher
 import com.atlassian.sal.api.ApplicationProperties
 import com.atlassian.crucible.event._
+import parser._
 import scala.collection.JavaConverters._
 import com.atlassian.crucible.spi.PermId
-import java.text.SimpleDateFormat
-import scala.Some
 import com.atlassian.crucible.spi.data._
 import com.atlassian.sal.api.pluginsettings.{PluginSettings, PluginSettingsFactory}
-import scala.Predef._
 import com.atlassian.crucible.spi.services.{NotFoundException, ReviewService, ProjectService}
 import scala.util.control.Exception._
+import scala.None
 
 class CrucibleEventListener
 (
@@ -28,7 +27,25 @@ class CrucibleEventListener
 
   protected val name = "cru-irc-bot"
 
-  eventPublisher.register(this)
+  protected def isIrcBotChannelEnable(settings: PluginSettings, key: String) = {
+    val r = settings.get(classOf[IrcBotProjectChannelConfig].getName + "_" + key + ".enable")
+    if (r != null)
+      r.asInstanceOf[String].toBoolean
+    else
+      false
+  }
+
+  protected def getIrcBotChannelName(settings: PluginSettings, key: String) =
+    settings.get(classOf[IrcBotProjectChannelConfig].getName + "_" + key + ".channelName").asInstanceOf[String]
+
+
+  protected def isIrcBotChannelNotice(settings: PluginSettings, key: String) = {
+    val r = settings.get(classOf[IrcBotProjectChannelConfig].getName + "_" + key + ".notice")
+    if (r != null)
+      r.asInstanceOf[String].toBoolean
+    else
+      false
+  }
 
   private def getReviewUrl(reviewId: PermId[ReviewData]): String =
     applicationProperties.getBaseUrl + "/cru/" + reviewId.getId
@@ -52,7 +69,7 @@ class CrucibleEventListener
 
   private def formattedCommentMessage
   (projectData: ProjectData,
-   reviewData: ReviewData,
+   reviewData: DetailedReviewData,
    commentId: PermId[CommentData],
    title: String) = {
     val commentDataOption = catching(classOf[NotFoundException]) opt reviewService.getComment(commentId)
@@ -61,7 +78,6 @@ class CrucibleEventListener
         Seq(
           "%s %s".format(formattedProject(reviewData), title),
           "CommentId: %s".format(commentId.getId),
-          "User: %s".format(formattedUser(commentData.getUser)),
           formattedComment(commentData),
           getReviewUrl(reviewData.getPermaId) + "#c" + commentId.getId.split(":")(1)
         )
@@ -77,50 +93,50 @@ class CrucibleEventListener
 
   private def formattedReviewMessage
   (projectData: ProjectData,
-   detailedReviewData: DetailedReviewData,
+   reviewData: DetailedReviewData,
    title: String) = {
     val r = List(
-      Some("%s %s".format(formattedProject(detailedReviewData), title)),
-      if (detailedReviewData.getPermaId != null)
-        Some("Id: %s".format(detailedReviewData.getPermaId.getId))
+      Some("%s %s".format(formattedProject(reviewData), title)),
+      if (reviewData.getPermaId != null)
+        Some("Id: %s".format(reviewData.getPermaId.getId))
       else
         None,
-      if (detailedReviewData.getName != null)
-        Some("Name: %s".format(detailedReviewData.getName))
+      if (reviewData.getName != null && reviewData.getName.isEmpty == false)
+        Some("Name: %s".format(reviewData.getName))
       else
         None,
-      if (detailedReviewData.getDescription != null)
-        Some("Description: %s".format(detailedReviewData.getDescription))
+      if (reviewData.getDescription != null && reviewData.getDescription.isEmpty == false)
+        Some("Description: %s".format(reviewData.getDescription))
       else
         None,
-      if (detailedReviewData.getAuthor != null)
-        Some("Author: %s".format(formattedUser(detailedReviewData.getAuthor)))
+      if (reviewData.getAuthor != null)
+        Some("Author: %s".format(formattedUser(reviewData.getAuthor)))
       else
         None,
-      if (detailedReviewData.getModerator != null)
-        Some("Moderator: %s".format(formattedUser(detailedReviewData.getModerator)))
+      if (reviewData.getModerator != null)
+        Some("Moderator: %s".format(formattedUser(reviewData.getModerator)))
       else
         None).flatten ++
-      detailedReviewData.getReviewers.reviewer.asScala.map {
+      reviewData.getReviewers.reviewer.asScala.map {
         e => Some("Reviewer: %s(%s)".format(e.getDisplayName, e.getUserName))
       }.flatten.toList ++
       List(
-        if (detailedReviewData.getDueDate != null)
-          Some("DueDate: %s".format(dateFormat.format(detailedReviewData.getDueDate)))
+        if (reviewData.getDueDate != null)
+          Some("Due Date: %s".format(dateFormat.format(reviewData.getDueDate)))
         else
           None,
-        if (detailedReviewData.getJiraIssueKey != null)
-          Some("JIRA: %s".format(detailedReviewData.getJiraIssueKey))
+        if (reviewData.getJiraIssueKey != null)
+          Some("JIRA: %s".format(reviewData.getJiraIssueKey))
         else
           None,
-        Some(getReviewUrl(detailedReviewData.getPermaId))
+        Some(getReviewUrl(reviewData.getPermaId))
       ).flatten
     r.toSeq
   }
 
   private def formattedReviewStateChangeMessage
   (projectData: ProjectData,
-   reviewData: ReviewData,
+   reviewData: DetailedReviewData,
    reviewOldDataState: ReviewData.State,
    reviewNewDataState: ReviewData.State,
    title: String) =
@@ -135,7 +151,7 @@ class CrucibleEventListener
 
   private def formattedReviewerCompletedMessage
   (projectData: ProjectData,
-   reviewData: ReviewData,
+   reviewData: DetailedReviewData,
    reviewerData: ReviewerData,
    title: String) =
     Seq(
@@ -149,7 +165,7 @@ class CrucibleEventListener
 
   private def formattedonReviewItemRevisionDataChangeMessage
   (projectData: ProjectData,
-   reviewData: ReviewData,
+   reviewData: DetailedReviewData,
    addedRevisions: Iterable[ReviewItemRevisionData],
    removedRevisions: Iterable[ReviewItemRevisionData],
    title: String): Seq[String] = {
@@ -199,25 +215,6 @@ class CrucibleEventListener
         "コメントが削除されました"))
   }
 
-  protected def isIrcBotChannelEnable(settings: PluginSettings, key: String) = {
-    val r = settings.get(classOf[IrcBotProjectChannelConfig].getName + "_" + key + ".enable")
-    if (r != null)
-      r.asInstanceOf[String].toBoolean
-    else
-      false
-  }
-
-  protected def getIrcBotChannelName(settings: PluginSettings, key: String) =
-    settings.get(classOf[IrcBotProjectChannelConfig].getName + "_" + key + ".channelName").asInstanceOf[String]
-
-
-  protected def isIrcBotChannelNotice(settings: PluginSettings, key: String) = {
-    val r = settings.get(classOf[IrcBotProjectChannelConfig].getName + "_" + key + ".notice")
-    if (r != null)
-      r.asInstanceOf[String].toBoolean
-    else
-      false
-  }
 
   @EventListener
   def onReviewCommentUpdated(event: CommentUpdatedEvent) {
@@ -351,9 +348,38 @@ class CrucibleEventListener
         "すべてのレビューアがレビューを久しく完了していません"))
   }
 
+  def listReview(asc:Boolean) = {
+    val r = reviewService.getAllReviews(true)
+    if (r != null) {
+      r.asScala.filter {
+        e =>
+          e.getState == ReviewData.State.Review
+      }.sortWith(
+        (o1, o2) =>
+          (o1.asInstanceOf[DetailedReviewData].getVersionedComments.comments.size() <
+            o2.asInstanceOf[DetailedReviewData].getVersionedComments.comments.size() == asc)
+      ).take(10).map {
+        e =>
+          "[%s] %s , a:%s, m:%s : %s".
+            format(e.getPermaId.getId, e.getName, formattedUser(e.getAuthor), formattedUser(e.getModerator), getReviewUrl(e.getPermaId))
+      }
+    } else
+      List.empty[String]
+  }
 
   def onMessage(channel: String, sender: String, login: String, hostname: String, message: String) {
     LOGGER.info("c = %s, s = %s, l = %s, h = %s, m = %s".format(channel, sender, login, hostname, message))
+    val settings = pluginSettingsFactory.createGlobalSettings
+    if (isIrcBotEnable(settings)) {
+      val b = new BotParsers
+      val r = b.parse(message) match {
+        case ListOpecode(ReviewOperand(CommentSortType(Asc))) => listReview(true)
+        case ListOpecode(ReviewOperand(CommentSortType(Desc))) => listReview(true)
+      }
+      r.foreach {
+        pircBot.sendMessage(channel, _)
+      }
+    }
   }
 
   def destroy {
@@ -362,7 +388,7 @@ class CrucibleEventListener
 
   def afterPropertiesSet {
     eventPublisher.register(this)
-  }
 
+  }
 
 }
