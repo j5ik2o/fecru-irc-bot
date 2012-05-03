@@ -5,7 +5,7 @@ import org.jibble.pircbot.{PircBot, IrcException, NickAlreadyInUseException}
 import org.slf4j.LoggerFactory
 import java.text.SimpleDateFormat
 import scala.Predef._
-import com.github.j5ik2o.fecruircbot.domain.IrcBotGlobalConfigRepository
+import com.github.j5ik2o.fecruircbot.domain.{IrcBotGlobalConfig, IrcBotGlobalConfigRepository}
 
 trait IrcConfigAccess {
 

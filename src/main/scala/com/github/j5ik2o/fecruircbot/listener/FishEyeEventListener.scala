@@ -5,13 +5,10 @@ import com.atlassian.event.api.EventPublisher
 import com.atlassian.fisheye.event.CommitEvent
 import com.atlassian.fisheye.spi.services.RevisionDataService
 import com.atlassian.sal.api.ApplicationProperties
-import domain.{IrcBotRepositoryChannelConfigRepository, IrcBotGlobalConfigRepository}
 import org.springframework.beans.factory.DisposableBean
 import org.springframework.beans.factory.InitializingBean
 import com.atlassian.sal.api.pluginsettings.PluginSettingsFactory
-import com.github.j5ik2o.fecruircbot.domain.{IrcBotRepositoryChannelConfigRepository, IrcBotGlobalConfigRepository}
-import com.github.j5ik2o.fecruircbot.listener.IrcConfigAccess
-import com.github.j5ik2o.fecruircbot.IrcConfigAccess
+import com.github.j5ik2o.fecruircbot.domain.{IrcBotRepositoryChannelConfig, IrcBotRepositoryChannelConfigRepository, IrcBotGlobalConfigRepository}
 
 class FishEyeEventListener
 (
@@ -24,8 +21,6 @@ class FishEyeEventListener
   ) extends DisposableBean with InitializingBean with IrcConfigAccess {
 
   protected val name = "fe-irc-bot"
-
-  eventPublisher.register(this)
 
   protected def isIrcBotChannelEnable(key: String) = {
     ircBotRepositoryChannelConfigRepository.resolve(key) match {
