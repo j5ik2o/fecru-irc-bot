@@ -15,8 +15,6 @@ import javax.ws.rs._
 class IrcBotProjectChannelConfigResource
 (
   userManager: UserManager,
-  pluginSettingsFactory: PluginSettingsFactory,
-  transactionTemplate: TransactionTemplate,
   ircBotProjectChannelConfigRepository: IrcBotProjectChannelConfigRepository
   ) {
 

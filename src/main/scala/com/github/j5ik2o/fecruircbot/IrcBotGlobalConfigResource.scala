@@ -20,9 +20,7 @@ import com.atlassian.sal.api.user.UserManager
 class IrcBotGlobalConfigResource
 (
   userManager: UserManager,
-  ircBotGlobalConfigRepository: IrcBotGlobalConfigRepository,
-  pluginSettingsFactory: PluginSettingsFactory,
-  transactionTemplate: TransactionTemplate
+  ircBotGlobalConfigRepository: IrcBotGlobalConfigRepository
   ) {
 
   protected val LOGGER = LoggerFactory.getLogger("atlassian.plugin")

@@ -21,7 +21,6 @@ class CrucibleEventListener
   applicationProperties: ApplicationProperties,
   reviewService: ReviewService,
   protected val projectService: ProjectService,
-  //protected val pluginSettingsFactory: PluginSettingsFactory,
   protected val ircBotGlobalConfigRepository: IrcBotGlobalConfigRepository,
   protected val ircBotProjectChannelConfigRepository: IrcBotProjectChannelConfigRepository
   )
