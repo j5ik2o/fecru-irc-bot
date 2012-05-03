@@ -1,4 +1,4 @@
-package com.github.j5ik2o.fecruircbot
+package com.github.j5ik2o.fecruircbot.rest
 
 import javax.servlet.http.HttpServletRequest
 import javax.ws.rs.Consumes
@@ -11,16 +11,15 @@ import javax.ws.rs.core.Context
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
 import org.slf4j.LoggerFactory
-import com.atlassian.sal.api.pluginsettings.PluginSettingsFactory
-import com.atlassian.sal.api.transaction.TransactionCallback
-import com.atlassian.sal.api.transaction.TransactionTemplate
 import com.atlassian.sal.api.user.UserManager
+import com.github.j5ik2o.fecruircbot.servlet.ProjectServlet
+import com.github.j5ik2o.fecruircbot.domain.{IrcBotRepositoryChannelConfig, IrcBotRepositoryChannelConfigRepository}
 
 @Path("/repositoryChannelConfig")
 class IrcBotRepositoryChannelConfigResource
 (
   userManager: UserManager,
-  ircBotRepositoryChannelConfigRepository:IrcBotRepositoryChannelConfigRepository
+  ircBotRepositoryChannelConfigRepository: IrcBotRepositoryChannelConfigRepository
   ) {
 
   private val LOGGER = LoggerFactory.getLogger(classOf[ProjectServlet])

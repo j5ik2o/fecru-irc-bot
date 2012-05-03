@@ -1,13 +1,17 @@
-package com.github.j5ik2o.fecruircbot
+package com.github.j5ik2o.fecruircbot.listener
 
 import com.atlassian.event.api.EventListener
 import com.atlassian.event.api.EventPublisher
 import com.atlassian.fisheye.event.CommitEvent
 import com.atlassian.fisheye.spi.services.RevisionDataService
 import com.atlassian.sal.api.ApplicationProperties
+import domain.{IrcBotRepositoryChannelConfigRepository, IrcBotGlobalConfigRepository}
 import org.springframework.beans.factory.DisposableBean
 import org.springframework.beans.factory.InitializingBean
 import com.atlassian.sal.api.pluginsettings.PluginSettingsFactory
+import com.github.j5ik2o.fecruircbot.domain.{IrcBotRepositoryChannelConfigRepository, IrcBotGlobalConfigRepository}
+import com.github.j5ik2o.fecruircbot.listener.IrcConfigAccess
+import com.github.j5ik2o.fecruircbot.IrcConfigAccess
 
 class FishEyeEventListener
 (
@@ -24,7 +28,7 @@ class FishEyeEventListener
   eventPublisher.register(this)
 
   protected def isIrcBotChannelEnable(key: String) = {
-    ircBotRepositoryChannelConfigRepository.resolve(key) match{
+    ircBotRepositoryChannelConfigRepository.resolve(key) match {
       case Some(IrcBotRepositoryChannelConfig(true, _, _)) => true
       case _ => false
     }

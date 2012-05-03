@@ -1,10 +1,11 @@
-package com.github.j5ik2o.fecruircbot
+package com.github.j5ik2o.fecruircbot.listener
 
 import java.io.IOException
 import org.jibble.pircbot.{PircBot, IrcException, NickAlreadyInUseException}
 import org.slf4j.LoggerFactory
 import java.text.SimpleDateFormat
 import scala.Predef._
+import com.github.j5ik2o.fecruircbot.domain.IrcBotGlobalConfigRepository
 
 trait IrcConfigAccess {
 

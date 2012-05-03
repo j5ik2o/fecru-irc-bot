@@ -1,8 +1,7 @@
-package com.github.j5ik2o.fecruircbot
+package com.github.j5ik2o.fecruircbot.domain
 
 import com.atlassian.sal.api.pluginsettings.PluginSettingsFactory
 import com.atlassian.sal.api.transaction.{TransactionCallback, TransactionTemplate}
-
 
 
 class IrcBotProjectChannelConfigRepository
@@ -11,7 +10,7 @@ class IrcBotProjectChannelConfigRepository
   transactionTemplate: TransactionTemplate
   ) {
 
-  def save(key:String, ircBotProjectChannelConfig: IrcBotProjectChannelConfig) {
+  def save(key: String, ircBotProjectChannelConfig: IrcBotProjectChannelConfig) {
     transactionTemplate.execute(new TransactionCallback[Unit] {
       def doInTransaction = {
         val pluginSettings = pluginSettingsFactory.createGlobalSettings

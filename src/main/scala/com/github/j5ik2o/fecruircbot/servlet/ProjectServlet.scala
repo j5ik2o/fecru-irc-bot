@@ -1,4 +1,4 @@
-package com.github.j5ik2o.fecruircbot
+package com.github.j5ik2o.fecruircbot.servlet
 
 import java.net.URI
 import javax.servlet.http.HttpServlet
@@ -11,7 +11,7 @@ import com.atlassian.sal.api.user.UserManager
 import com.atlassian.templaterenderer.TemplateRenderer
 
 @SuppressWarnings(Array("serial"))
-class RepositoryServlet
+class ProjectServlet
 (
   userManager: UserManager,
   loginUriProvider: LoginUriProvider,
@@ -43,7 +43,7 @@ class RepositoryServlet
     else {
       context += (baseUriKey -> "http://localhost:3990/fecru")
     }
-    renderer.render("repository.vm", context.asJava, response.getWriter)
+    renderer.render("project.vm", context.asJava, response.getWriter)
     LOGGER.debug("doGet : finshed")
   }
 

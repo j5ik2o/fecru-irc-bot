@@ -1,4 +1,4 @@
-package com.github.j5ik2o.fecruircbot
+package com.github.j5ik2o.fecruircbot.domain
 
 import javax.xml.bind.annotation.XmlAccessType
 import javax.xml.bind.annotation.XmlAccessorType

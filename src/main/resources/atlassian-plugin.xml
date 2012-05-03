@@ -23,13 +23,13 @@
         <interface>com.atlassian.applinks.api.ApplicationLinkService</interface>
     </component-import>
 
-    <component name="Commit Listener" key="commit-listener" class="com.github.j5ik2o.fecruircbot.FishEyeEventListener"/>
+    <component name="Commit Listener" key="commit-listener" class="com.github.j5ik2o.fecruircbot.listener.FishEyeEventListener"/>
     <component name="Review Listener" key="review-listener"
-               class="com.github.j5ik2o.fecruircbot.CrucibleEventListener"/>
+               class="com.github.j5ik2o.fecruircbot.listener.CrucibleEventListener"/>
 
-    <component name="IrcBot Global Config Repository" key="irc-bot-global-config-repository" class="com.github.j5ik2o.fecruircbot.IrcBotGlobalConfigRepository"/>
-    <component name="IrcBot Project Channel Config Repository" key="irc-bot-project-channel-config-repository" class="com.github.j5ik2o.fecruircbot.IrcBotProjectChannelConfigRepository"/>
-    <component name="IrcBot Repository Channel Config Repository" key="irc-bot-repository-channel-config-repository" class="com.github.j5ik2o.fecruircbot.IrcBotRepositoryChannelConfigRepository"/>
+    <component name="IrcBot Global Config Repository" key="irc-bot-global-config-repository" class="com.github.j5ik2o.fecruircbot.domain.IrcBotGlobalConfigRepository"/>
+    <component name="IrcBot Project Channel Config Repository" key="irc-bot-project-channel-config-repository" class="com.github.j5ik2o.fecruircbot.domain.IrcBotProjectChannelConfigRepository"/>
+    <component name="IrcBot Repository Channel Config Repository" key="irc-bot-repository-channel-config-repository" class="com.github.j5ik2o.fecruircbot.domain.IrcBotRepositoryChannelConfigRepository"/>
 
 
     <resource type="i18n" name="i18n" location="com.github.j5ik2o.fecruircbot.i18n"/>
@@ -38,15 +38,15 @@
         <description>Provides REST resources for the admin UI.</description>
     </rest>
 
-    <servlet key="admin-servlet" class="com.github.j5ik2o.fecruircbot.AdminServlet">
+    <servlet key="admin-servlet" class="com.github.j5ik2o.fecruircbot.servlet.AdminServlet">
         <url-pattern>/fecru-irc-bot/admin</url-pattern>
     </servlet>
 
-    <servlet key="project-servlet" class="com.github.j5ik2o.fecruircbot.ProjectServlet">
+    <servlet key="project-servlet" class="com.github.j5ik2o.fecruircbot.servlet.ProjectServlet">
         <url-pattern>/fecru-irc-bot/project</url-pattern>
     </servlet>
 
-    <servlet key="repository-servlet" class="com.github.j5ik2o.fecruircbot.RepositoryServlet">
+    <servlet key="repository-servlet" class="com.github.j5ik2o.fecruircbot.servlet.RepositoryServlet">
         <url-pattern>/fecru-irc-bot/repository</url-pattern>
     </servlet>
 

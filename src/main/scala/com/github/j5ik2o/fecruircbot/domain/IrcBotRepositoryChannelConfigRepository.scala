@@ -1,4 +1,4 @@
-package com.github.j5ik2o.fecruircbot
+package com.github.j5ik2o.fecruircbot.domain
 
 import com.atlassian.sal.api.pluginsettings.PluginSettingsFactory
 import com.atlassian.sal.api.transaction.{TransactionCallback, TransactionTemplate}

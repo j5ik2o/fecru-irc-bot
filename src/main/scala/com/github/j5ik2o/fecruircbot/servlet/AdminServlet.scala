@@ -1,4 +1,4 @@
-package com.github.j5ik2o.fecruircbot
+package com.github.j5ik2o.fecruircbot.servlet
 
 import com.atlassian.sal.api.user.UserManager
 import com.atlassian.sal.api.auth.LoginUriProvider

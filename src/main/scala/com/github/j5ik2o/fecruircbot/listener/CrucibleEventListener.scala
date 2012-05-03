@@ -1,4 +1,4 @@
-package com.github.j5ik2o.fecruircbot
+package com.github.j5ik2o.fecruircbot.listener
 
 import org.springframework.beans.factory.DisposableBean
 import org.springframework.beans.factory.InitializingBean
@@ -6,14 +6,13 @@ import com.atlassian.event.api.EventListener
 import com.atlassian.event.api.EventPublisher
 import com.atlassian.sal.api.ApplicationProperties
 import com.atlassian.crucible.event._
-import parser._
 import scala.collection.JavaConverters._
 import com.atlassian.crucible.spi.PermId
 import com.atlassian.crucible.spi.data._
 import scala.util.control.Exception._
 import com.atlassian.crucible.spi.services.{NotFoundException, ReviewService, ProjectService}
-import scala._
-import scala.Predef._
+import com.github.j5ik2o.fecruircbot.parser._
+import com.github.j5ik2o.fecruircbot.domain.{IrcBotProjectChannelConfig, IrcBotProjectChannelConfigRepository, IrcBotGlobalConfigRepository}
 
 class CrucibleEventListener
 (
