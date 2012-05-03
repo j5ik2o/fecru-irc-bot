@@ -36,7 +36,7 @@ class IrcBotProjectChannelConfigResource
       val response = Response.ok(
         ircBotProjectChannelConfigRepository.
           resolve(key).
-          getOrElse(new IrcBotProjectChannelConfig())
+          getOrElse(IrcBotProjectChannelConfig())
       ).build
       LOGGER.debug("get : finished(%s)".format(response))
       response

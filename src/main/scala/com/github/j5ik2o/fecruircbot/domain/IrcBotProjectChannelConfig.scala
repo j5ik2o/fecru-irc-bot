@@ -8,13 +8,22 @@ import reflect.BeanProperty
 
 @XmlRootElement
 @XmlAccessorType(XmlAccessType.FIELD)
-final case class IrcBotProjectChannelConfig
+final class IrcBotProjectChannelConfig
 (
   @BeanProperty @XmlElement var enable: Boolean,
   @BeanProperty @XmlElement var notice: Boolean,
   @BeanProperty @XmlElement var channelName: String
-  ) {
+  )
 
-  def this() = this(false, false, "")
+object IrcBotProjectChannelConfig {
 
+  def apply() = new IrcBotProjectChannelConfig(false, false, "")
+
+  def apply(enable: Boolean, notice: Boolean, channelName: String) =
+    new IrcBotProjectChannelConfig(enable, notice, channelName)
+
+  def unapply(ircBotProjectChannelConfig:IrcBotProjectChannelConfig):Option[(Boolean,Boolean,String)] =
+    Some(ircBotProjectChannelConfig.enable,
+      ircBotProjectChannelConfig.notice,
+      ircBotProjectChannelConfig.channelName)
 }

@@ -8,14 +8,23 @@ import reflect.BeanProperty
 
 @XmlRootElement
 @XmlAccessorType(XmlAccessType.FIELD)
-final case class IrcBotGlobalConfig
+final class IrcBotGlobalConfig
 (
   @BeanProperty @XmlElement var enable: Boolean,
   @BeanProperty @XmlElement var ircServerName: String,
   @BeanProperty @XmlElement var ircServerPort: Int
-  ) {
+  )
 
-  def this() = this(false, "", 0)
+object IrcBotGlobalConfig {
+
+  def apply() = new IrcBotGlobalConfig(false, "", 0)
+
+  def apply(enable: Boolean, ircServerName: String, ircServerPort: Int) =
+    new IrcBotGlobalConfig(enable, ircServerName, ircServerPort)
+
+  def unapply(ircBotGlobalConfig: IrcBotGlobalConfig): Option[(Boolean, String, Int)] =
+    Some(ircBotGlobalConfig.enable,
+      ircBotGlobalConfig.ircServerName,
+      ircBotGlobalConfig.ircServerPort)
 
 }
-

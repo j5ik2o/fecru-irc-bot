@@ -41,7 +41,7 @@ class IrcBotRepositoryChannelConfigResource
       val response = Response.ok(
         ircBotRepositoryChannelConfigRepository.
           resolve(key).
-          getOrElse(new IrcBotRepositoryChannelConfig())
+          getOrElse(IrcBotRepositoryChannelConfig())
       ).build
       LOGGER.debug(String.format("get : finished(%s)", response))
       response

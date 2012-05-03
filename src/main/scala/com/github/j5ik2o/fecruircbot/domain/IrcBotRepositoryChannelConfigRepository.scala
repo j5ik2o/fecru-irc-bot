@@ -30,11 +30,13 @@ class IrcBotRepositoryChannelConfigRepository
         if (enable == null || notice == null || channelName == null) {
           None
         } else {
-          val config = new IrcBotRepositoryChannelConfig
-          config.enable = enable.asInstanceOf[String].toBoolean
-          config.notice = notice.asInstanceOf[String].toBoolean
-          config.channelName = channelName.asInstanceOf[String]
-          Some(config)
+          Some(
+            new IrcBotRepositoryChannelConfig(
+              enable.toString.toBoolean,
+              notice.toString.toBoolean,
+              channelName.toString
+            )
+          )
         }
       }
     })

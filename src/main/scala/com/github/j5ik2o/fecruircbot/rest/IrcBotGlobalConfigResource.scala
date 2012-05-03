@@ -42,7 +42,7 @@ class IrcBotGlobalConfigResource
       val result = Response.ok(
         ircBotGlobalConfigRepository.
           resolve.
-          getOrElse(new IrcBotGlobalConfig())
+          getOrElse(IrcBotGlobalConfig())
       ).build
       LOGGER.debug(String.format("get : finished(%s)", result))
       result
