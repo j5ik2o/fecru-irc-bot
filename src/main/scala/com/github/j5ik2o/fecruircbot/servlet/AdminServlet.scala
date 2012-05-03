@@ -11,12 +11,11 @@ import org.slf4j.LoggerFactory
 class AdminServlet
 (
   userManager: UserManager,
-  loginUriProvider: LoginUriProvider,
+  protected[this] val loginUriProvider: LoginUriProvider,
   templateRenderer: TemplateRenderer,
   applicationProperties: ApplicationProperties
-  ) extends HttpServlet {
+  ) extends HttpServlet with ServletSupport {
 
-  private val LOGGER = LoggerFactory.getLogger("atlassian.plugin")
   private val isDebug = true
 
   override def doGet(request: HttpServletRequest, response: HttpServletResponse) {
@@ -43,21 +42,5 @@ class AdminServlet
     LOGGER.debug("doGet : finished")
   }
 
-  private def redirectToLogin(request: HttpServletRequest, response: HttpServletResponse) {
-    LOGGER.debug("redirectToLogin : start(%s, %s)".format(request, response))
-    response.sendRedirect(loginUriProvider.getLoginUri(getUri(request)).toASCIIString)
-    LOGGER.debug("redirectToLogin : finished")
-  }
 
-  private def getUri(request: HttpServletRequest): URI = {
-    LOGGER.debug("getUri : start(%s)".format(request))
-    val builder = request.getRequestURL
-    if (request.getQueryString != null) {
-      builder.append("?")
-      builder.append(request.getQueryString)
-    }
-    val result: URI = URI.create(builder.toString)
-    LOGGER.debug("getUri : finished(%s)".format(result))
-    result
-  }
 }
