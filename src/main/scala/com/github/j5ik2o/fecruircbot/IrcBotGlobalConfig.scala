@@ -8,7 +8,7 @@ import reflect.BeanProperty
 
 @XmlRootElement
 @XmlAccessorType(XmlAccessType.FIELD)
-final class IrcBotGlobalConfig
+final case class IrcBotGlobalConfig
 (
 @BeanProperty @XmlElement var enable: Boolean,
 @BeanProperty @XmlElement var ircServerName: String,

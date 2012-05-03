@@ -20,6 +20,7 @@ import com.atlassian.sal.api.user.UserManager
 class IrcBotGlobalConfigResource
 (
   userManager: UserManager,
+  ircBotGlobalConfigRepository: IrcBotGlobalConfigRepository,
   pluginSettingsFactory: PluginSettingsFactory,
   transactionTemplate: TransactionTemplate
   ) {
@@ -35,21 +36,11 @@ class IrcBotGlobalConfigResource
       LOGGER.debug(String.format("get : finished(%s)", request))
       return Response.status(Status.UNAUTHORIZED).build
     }
-    val result = Response.ok(transactionTemplate.execute(new TransactionCallback[IrcBotGlobalConfig] {
-      def doInTransaction = {
-        val settings = pluginSettingsFactory.createGlobalSettings
-        val config = new IrcBotGlobalConfig
-        val enable = settings.get(classOf[IrcBotGlobalConfig].getName + ".enable")
-        config.enable = if (enable != null) enable.asInstanceOf[String].toBoolean else false
-        val ircServerName = settings.get(classOf[IrcBotGlobalConfig].getName + ".ircServerName")
-        config.ircServerName = if (ircServerName != null) ircServerName.asInstanceOf[String] else ""
-        val ircServerPort = settings.get(classOf[IrcBotGlobalConfig].getName + ".ircServerPort").asInstanceOf[String]
-        if (ircServerPort != null) {
-          config.ircServerPort = ircServerPort.toInt
-        }
-        config
-      }
-    })).build
+    val result = Response.ok(
+      ircBotGlobalConfigRepository.
+        resolve.
+        getOrElse(new IrcBotGlobalConfig())
+    ).build
     LOGGER.debug(String.format("get : finished(%s)", result))
     result
   }
@@ -63,14 +54,7 @@ class IrcBotGlobalConfigResource
     if (username != null && !userManager.isSystemAdmin(username)) {
       return Response.status(Status.UNAUTHORIZED).build
     }
-    transactionTemplate.execute(new TransactionCallback[Unit] {
-      def doInTransaction = {
-        val pluginSettings = pluginSettingsFactory.createGlobalSettings
-        pluginSettings.put(classOf[IrcBotGlobalConfig].getName + ".enable", config.getEnable.toString)
-        pluginSettings.put(classOf[IrcBotGlobalConfig].getName + ".ircServerName", config.getIrcServerName)
-        pluginSettings.put(classOf[IrcBotGlobalConfig].getName + ".ircServerPort", config.getIrcServerPort.toString)
-      }
-    })
+    ircBotGlobalConfigRepository.save(config)
     Response.noContent.build
   }
 }

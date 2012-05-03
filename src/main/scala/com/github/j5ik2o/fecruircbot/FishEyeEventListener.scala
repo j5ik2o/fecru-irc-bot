@@ -7,39 +7,34 @@ import com.atlassian.fisheye.spi.services.RevisionDataService
 import com.atlassian.sal.api.ApplicationProperties
 import org.springframework.beans.factory.DisposableBean
 import org.springframework.beans.factory.InitializingBean
-import com.atlassian.sal.api.pluginsettings.{PluginSettings, PluginSettingsFactory}
+import com.atlassian.sal.api.pluginsettings.PluginSettingsFactory
 
 class FishEyeEventListener
 (
   eventPublisher: EventPublisher,
   applicationProperties: ApplicationProperties,
   revisionDataService: RevisionDataService,
-  protected val pluginSettingsFactory: PluginSettingsFactory
+  protected val pluginSettingsFactory: PluginSettingsFactory,
+  protected val ircBotGlobalConfigRepository: IrcBotGlobalConfigRepository,
+  ircBotRepositoryChannelConfigRepository: IrcBotRepositoryChannelConfigRepository
   ) extends DisposableBean with InitializingBean with IrcConfigAccess {
 
   protected val name = "fe-irc-bot"
 
   eventPublisher.register(this)
 
-  protected def isIrcBotChannelEnable(settings: PluginSettings, key: String) = {
-    val r = settings.get(classOf[IrcBotRepositoryChannelConfig].getName + "_" + key + ".enable")
-    if (r != null)
-      r.asInstanceOf[String].toBoolean
-    else
-      false
+  protected def isIrcBotChannelEnable(key: String) = {
+    ircBotRepositoryChannelConfigRepository.resolve(key) match{
+      case Some(IrcBotRepositoryChannelConfig(true, _, _)) => true
+      case _ => false
+    }
   }
 
-  protected def getIrcBotChannelName(settings: PluginSettings, key: String) =
-    settings.get(classOf[IrcBotRepositoryChannelConfig].getName + "_" + key + ".channelName").asInstanceOf[String]
+  protected def getIrcBotChannelName(key: String) =
+    ircBotRepositoryChannelConfigRepository.resolve(key).get.getChannelName()
 
-
-  protected def isIrcBotChannelNotice(settings: PluginSettings, key: String) = {
-    val r = settings.get(classOf[IrcBotRepositoryChannelConfig].getName + "_" + key + ".notice")
-    if (r != null)
-      r.asInstanceOf[String].toBoolean
-    else
-      false
-  }
+  protected def isIrcBotChannelNotice(key: String) =
+    ircBotRepositoryChannelConfigRepository.resolve(key).get.getNotice()
 
   @EventListener
   def onCommit(event: CommitEvent) {

@@ -13,6 +13,7 @@ import com.atlassian.crucible.spi.data._
 import com.atlassian.sal.api.pluginsettings.{PluginSettings, PluginSettingsFactory}
 import scala.util.control.Exception._
 import com.atlassian.crucible.spi.services.{NotFoundException, ReviewService, ProjectService}
+import scala._
 
 class CrucibleEventListener
 (
@@ -20,31 +21,26 @@ class CrucibleEventListener
   applicationProperties: ApplicationProperties,
   reviewService: ReviewService,
   protected val projectService: ProjectService,
-  protected val pluginSettingsFactory: PluginSettingsFactory
+  //protected val pluginSettingsFactory: PluginSettingsFactory,
+  protected val ircBotGlobalConfigRepository: IrcBotGlobalConfigRepository,
+  protected val ircBotProjectChannelConfigRepository: IrcBotProjectChannelConfigRepository
   )
   extends DisposableBean with InitializingBean with IrcConfigAccess {
 
   protected val name = "cru-irc-bot"
 
-  protected def isIrcBotChannelEnable(settings: PluginSettings, key: String) = {
-    val r = settings.get(classOf[IrcBotProjectChannelConfig].getName + "_" + key + ".enable")
-    if (r != null)
-      r.asInstanceOf[String].toBoolean
-    else
-      false
+  protected def isIrcBotChannelEnable(key: String) = {
+    ircBotProjectChannelConfigRepository.resolve(key) match{
+      case Some(IrcBotProjectChannelConfig(true, _, _)) => true
+      case _ => false
+    }
   }
 
-  protected def getIrcBotChannelName(settings: PluginSettings, key: String) =
-    settings.get(classOf[IrcBotProjectChannelConfig].getName + "_" + key + ".channelName").asInstanceOf[String]
+  protected def getIrcBotChannelName(key: String) =
+    ircBotProjectChannelConfigRepository.resolve(key).get.getChannelName()
 
-
-  protected def isIrcBotChannelNotice(settings: PluginSettings, key: String) = {
-    val r = settings.get(classOf[IrcBotProjectChannelConfig].getName + "_" + key + ".notice")
-    if (r != null)
-      r.asInstanceOf[String].toBoolean
-    else
-      false
-  }
+  protected def isIrcBotChannelNotice(key: String) =
+    ircBotProjectChannelConfigRepository.resolve(key).get.getNotice()
 
   private def getReviewUrl(reviewId: PermId[ReviewData]): String =
     applicationProperties.getBaseUrl + "/cru/" + reviewId.getId
@@ -377,8 +373,7 @@ class CrucibleEventListener
 
   def onMessage(channel: String, sender: String, login: String, hostname: String, message: String) {
     LOGGER.info("c = %s, s = %s, l = %s, h = %s, m = %s".format(channel, sender, login, hostname, message))
-    val settings = pluginSettingsFactory.createGlobalSettings
-    if (isIrcBotEnable(settings)) {
+    if (isIrcBotEnable) {
       val b = new BotParsers
       val r = b.parse(message) match {
         case ListOpecode(ReviewOperand(CommentSortType(Asc))) => listReview(true)
@@ -395,16 +390,15 @@ class CrucibleEventListener
   }
 
   protected def connectAllChannel = {
-    val settings = pluginSettingsFactory.createGlobalSettings
-    autoConnect(settings)
+    autoConnect
     val p = projectService.getAllProjects
     if (p != null) {
       val projects = p.asScala
       projects.map(_.getKey).filter(
-        isEnableChannel(settings, _)
+        isEnableChannel(_)
       ).foreach {
         key =>
-          val channelName = getIrcBotChannelName(settings, key)
+          val channelName = getIrcBotChannelName(key)
           pircBot.joinChannel(channelName)
       }
     }

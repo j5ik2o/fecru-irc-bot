@@ -8,7 +8,7 @@ import reflect.BeanProperty
 
 @XmlRootElement
 @XmlAccessorType(XmlAccessType.FIELD)
-final class IrcBotRepositoryChannelConfig
+final case class IrcBotRepositoryChannelConfig
 (
   @BeanProperty @XmlElement var enable: Boolean,
   @BeanProperty @XmlElement var notice: Boolean,

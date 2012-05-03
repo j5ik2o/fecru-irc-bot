@@ -16,7 +16,8 @@ class IrcBotProjectChannelConfigResource
 (
   userManager: UserManager,
   pluginSettingsFactory: PluginSettingsFactory,
-  transactionTemplate: TransactionTemplate
+  transactionTemplate: TransactionTemplate,
+  ircBotProjectChannelConfigRepository: IrcBotProjectChannelConfigRepository
   ) {
 
   private val LOGGER = LoggerFactory.getLogger(classOf[ProjectServlet])
@@ -27,19 +28,11 @@ class IrcBotProjectChannelConfigResource
   def get(@PathParam("key") key: String,
           @Context request: HttpServletRequest): Response = {
     LOGGER.debug(String.format("get : start(%s,%s)", key, request))
-    val response = Response.ok(transactionTemplate.execute(new TransactionCallback[IrcBotProjectChannelConfig] {
-      def doInTransaction = {
-        val settings = pluginSettingsFactory.createGlobalSettings
-        val config = new IrcBotProjectChannelConfig
-        val enable = settings.get(classOf[IrcBotProjectChannelConfig].getName + "_" + key + ".enable")
-        config.enable = if (enable != null) enable.asInstanceOf[String].toBoolean else false
-        val notice = settings.get(classOf[IrcBotProjectChannelConfig].getName + "_" + key + ".notice")
-        config.notice = if (notice != null) notice.asInstanceOf[String].toBoolean else false
-        val channelName = settings.get(classOf[IrcBotProjectChannelConfig].getName + "_" + key + ".channelName")
-        config.channelName = if (channelName != null) channelName.asInstanceOf[String] else ""
-        config
-      }
-    })).build
+    val response = Response.ok(
+      ircBotProjectChannelConfigRepository.
+        resolve(key).
+        getOrElse(new IrcBotProjectChannelConfig())
+    ).build
     LOGGER.debug(String.format("get : finished(%s)", response))
     response
   }
@@ -47,17 +40,10 @@ class IrcBotProjectChannelConfigResource
   @PUT
   @Path("{key}")
   @Consumes(Array(MediaType.APPLICATION_JSON))
-  def put(@PathParam("key") projectKey: String,
+  def put(@PathParam("key") key: String,
           config: IrcBotProjectChannelConfig,
           @Context request: HttpServletRequest): Response = {
-    transactionTemplate.execute(new TransactionCallback[Unit] {
-      def doInTransaction = {
-        val pluginSettings = pluginSettingsFactory.createGlobalSettings
-        pluginSettings.put(classOf[IrcBotProjectChannelConfig].getName + "_" + projectKey + ".enable", config.enable.toString)
-        pluginSettings.put(classOf[IrcBotProjectChannelConfig].getName + "_" + projectKey + ".notice", config.notice.toString)
-        pluginSettings.put(classOf[IrcBotProjectChannelConfig].getName + "_" + projectKey + ".channelName", config.getChannelName)
-      }
-    })
+    ircBotProjectChannelConfigRepository.save(key, config)
     Response.noContent.build
   }
 

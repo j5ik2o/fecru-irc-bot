@@ -20,8 +20,7 @@ import com.atlassian.sal.api.user.UserManager
 class IrcBotRepositoryChannelConfigResource
 (
   userManager: UserManager,
-  pluginSettingsFactory: PluginSettingsFactory,
-  transactionTemplate: TransactionTemplate
+  ircBotRepositoryChannelConfigRepository:IrcBotRepositoryChannelConfigRepository
   ) {
 
   private val LOGGER = LoggerFactory.getLogger(classOf[ProjectServlet])
@@ -32,19 +31,11 @@ class IrcBotRepositoryChannelConfigResource
   def get(@PathParam("key") key: String,
           @Context request: HttpServletRequest): Response = {
     LOGGER.debug(String.format("get : start(%s,%s)", key, request))
-    val response = Response.ok(transactionTemplate.execute(new TransactionCallback[IrcBotRepositoryChannelConfig] {
-      def doInTransaction = {
-        val settings = pluginSettingsFactory.createGlobalSettings
-        val config = new IrcBotRepositoryChannelConfig
-        val enable = settings.get(classOf[IrcBotRepositoryChannelConfig].getName + "_" + key + ".enable")
-        config.enable = if (enable != null) enable.asInstanceOf[String].toBoolean else false
-        val notice = settings.get(classOf[IrcBotRepositoryChannelConfig].getName + "_" + key + ".notice")
-        config.notice = if (notice != null) notice.asInstanceOf[String].toBoolean else false
-        val channelName = settings.get(classOf[IrcBotRepositoryChannelConfig].getName + "_" + key + ".channelName")
-        config.channelName = if (channelName != null) channelName.asInstanceOf[String] else ""
-        config
-      }
-    })).build
+    val response = Response.ok(
+      ircBotRepositoryChannelConfigRepository.
+        resolve(key).
+        getOrElse(new IrcBotRepositoryChannelConfig())
+    ).build
     LOGGER.debug(String.format("get : finished(%s)", response))
     response
   }
@@ -55,14 +46,7 @@ class IrcBotRepositoryChannelConfigResource
   def put(@PathParam("key") key: String,
           config: IrcBotRepositoryChannelConfig,
           @Context request: HttpServletRequest): Response = {
-    transactionTemplate.execute(new TransactionCallback[Unit] {
-      def doInTransaction = {
-        val pluginSettings = pluginSettingsFactory.createGlobalSettings
-        pluginSettings.put(classOf[IrcBotRepositoryChannelConfig].getName + "_" + key + ".enable", config.enable.toString)
-        pluginSettings.put(classOf[IrcBotRepositoryChannelConfig].getName + "_" + key + ".notice", config.notice.toString)
-        pluginSettings.put(classOf[IrcBotRepositoryChannelConfig].getName + "_" + key + ".channelName", config.getChannelName)
-      }
-    })
+    ircBotRepositoryChannelConfigRepository.save(key, config)
     Response.noContent.build
   }
 

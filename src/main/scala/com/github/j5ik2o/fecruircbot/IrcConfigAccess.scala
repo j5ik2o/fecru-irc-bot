@@ -3,8 +3,8 @@ package com.github.j5ik2o.fecruircbot
 import java.io.IOException
 import org.jibble.pircbot.{PircBot, IrcException, NickAlreadyInUseException}
 import org.slf4j.LoggerFactory
-import com.atlassian.sal.api.pluginsettings.{PluginSettingsFactory, PluginSettings}
 import java.text.SimpleDateFormat
+import scala.Predef._
 
 trait IrcConfigAccess {
 
@@ -13,54 +13,24 @@ trait IrcConfigAccess {
   protected val dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss")
 
   protected val LOGGER = LoggerFactory.getLogger("atlassian.plugin")
-  protected val pluginSettingsFactory: PluginSettingsFactory
+  protected val ircBotGlobalConfigRepository: IrcBotGlobalConfigRepository
   protected val name: String
 
-  protected def isIrcBotEnable(settings: PluginSettings) = {
-    val r = settings.get(classOf[IrcBotGlobalConfig].getName + ".enable")
-    if (r != null)
-      r.asInstanceOf[String].toBoolean
-    else
-      false
-  }
 
-  protected def getIrcServerName(settings: PluginSettings): Option[String] = {
-    val r = settings.get(classOf[IrcBotGlobalConfig].getName + ".ircServerName")
-    if (r != null) {
-      val ircServerName = r.asInstanceOf[String]
-      if (ircServerName.isEmpty == false) {
-        Some(ircServerName)
-      } else {
-        None
-      }
-    } else
-      None
-  }
-
-  protected def getIrcServerPort(settings: PluginSettings): Option[Int] = {
-    val r = settings.get(classOf[IrcBotGlobalConfig].getName + ".ircServerPort")
-    if (r != null) {
-      val ircServerPort = r.asInstanceOf[String]
-      if (ircServerPort.isEmpty == false) {
-        Some(ircServerPort.toInt)
-      } else {
-        None
-      }
-    } else
-      None
-  }
-
-  protected def autoConnect(settings: PluginSettings): Boolean = {
+  protected def autoConnect: Boolean = {
     if (pircBot.isConnected == false) {
-      getIrcServerName(settings) match {
-        case None => false
-        case Some(host) => getIrcServerPort(settings) match {
-          case None => pircBot.connect(host); true
-          case Some(port) => pircBot.connect(host, port); true
-        }
+      ircBotGlobalConfigRepository.resolve match {
+        case Some(IrcBotGlobalConfig(true, host, port)) =>
+          if (port != 0) {
+            pircBot.connect(host, port);
+            true
+          } else {
+            pircBot.connect(host);
+            true
+          }
+        case _ => false
       }
-    } else
-      true
+    } else true
   }
 
   protected def sendMessages(key: String, messages: Seq[String]) {
@@ -70,33 +40,40 @@ trait IrcConfigAccess {
     }
   }
 
-  protected def isIrcBotChannelEnable(settings: PluginSettings, key: String): Boolean
+  protected def isIrcBotChannelEnable(key: String): Boolean
 
-  protected def isIrcBotChannelNotice(settings: PluginSettings, key: String): Boolean
+  protected def isIrcBotChannelNotice(key: String): Boolean
 
-  protected def getIrcBotChannelName(settings: PluginSettings, key: String): String
+  protected def getIrcBotChannelName(key: String): String
 
-  protected def isEnableChannel(settings: PluginSettings, key: String) = {
-    if (isIrcBotEnable(settings) == false ||
-      isIrcBotChannelEnable(settings, key) == false) {
-      LOGGER.info("有効になっていません (%s)".format(key))
-      false
-    } else true
+  protected def isIrcBotEnable: Boolean = {
+    ircBotGlobalConfigRepository.resolve match {
+      case Some(IrcBotGlobalConfig(true, _, _)) => true
+      case Some(IrcBotGlobalConfig(false, _, _)) => false
+      case _ => false
+    }
+  }
+
+  protected def isEnableChannel(key: String) = {
+    ircBotGlobalConfigRepository.resolve match {
+      case Some(IrcBotGlobalConfig(true, _, _)) => isIrcBotChannelEnable(key)
+      case Some(IrcBotGlobalConfig(false, _, _)) => false
+      case _ => false
+    }
   }
 
 
   protected def sendMessage(key: String, message: String) {
-    val settings = pluginSettingsFactory.createGlobalSettings
-    if (autoConnect(settings) == false) {
+    if (autoConnect == false) {
       return
     }
-    if (isEnableChannel(settings, key) == false) {
+    if (isEnableChannel(key) == false) {
       return
     }
     try {
-      val channelName = getIrcBotChannelName(settings, key)
+      val channelName = getIrcBotChannelName(key)
       pircBot.joinChannel(channelName)
-      if (isIrcBotChannelNotice(settings, key)) {
+      if (isIrcBotChannelNotice(key)) {
         pircBot.sendNotice(channelName, message)
       } else {
         pircBot.sendMessage(channelName, message)

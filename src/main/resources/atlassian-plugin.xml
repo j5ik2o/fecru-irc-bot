@@ -27,6 +27,11 @@
     <component name="Review Listener" key="review-listener"
                class="com.github.j5ik2o.fecruircbot.CrucibleEventListener"/>
 
+    <component name="IrcBot Global Config Repository" key="irc-bot-global-config-repository" class="com.github.j5ik2o.fecruircbot.IrcBotGlobalConfigRepository"/>
+    <component name="IrcBot Project Channel Config Repository" key="irc-bot-project-channel-config-repository" class="com.github.j5ik2o.fecruircbot.IrcBotProjectChannelConfigRepository"/>
+    <component name="IrcBot Repository Channel Config Repository" key="irc-bot-repository-channel-config-repository" class="com.github.j5ik2o.fecruircbot.IrcBotRepositoryChannelConfigRepository"/>
+
+
     <resource type="i18n" name="i18n" location="com.github.j5ik2o.fecruircbot.i18n"/>
 
     <rest key="rest" path="/fecru-irc-bot" version="1.0">
