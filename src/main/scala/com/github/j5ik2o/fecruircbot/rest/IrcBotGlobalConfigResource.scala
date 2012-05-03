@@ -12,8 +12,15 @@ import javax.ws.rs.core.Response
 import javax.ws.rs.core.Response.Status
 import org.slf4j.LoggerFactory
 import com.atlassian.sal.api.user.UserManager
-import com.github.j5ik2o.fecruircbot.domain.{IrcBotGlobalConfig, IrcBotGlobalConfigRepository}
+import com.github.j5ik2o.fecruircbot.domain.{IrcBotGlobalConfigRepository, IrcBotGlobalConfig}
+import java.lang.String
 
+/**
+ * [[com.github.j5ik2o.fecruircbot.domain.IrcBotGlobalConfig]]のリソース。
+ *
+ * @param userManager [[com.atlassian.sal.api.user.UserManager]]
+ * @param ircBotGlobalConfigRepository [[com.github.j5ik2o.fecruircbot.domain.IrcBotGlobalConfigRepository]]
+ */
 @Path("/globalConfig")
 class IrcBotGlobalConfigResource
 (
@@ -28,32 +35,36 @@ class IrcBotGlobalConfigResource
   def get(@Context request: HttpServletRequest): Response = {
     LOGGER.debug(String.format("get : start(%s)", request))
     val username = userManager.getRemoteUsername(request)
-    if (username != null && !userManager.isSystemAdmin(username)) {
+    if (username != null && userManager.isSystemAdmin(username) == false) {
       LOGGER.debug(String.format("get : finished(%s)", request))
-      return Response.status(Status.UNAUTHORIZED).build
+      Response.status(Status.UNAUTHORIZED).build
+    } else {
+      val result = Response.ok(
+        ircBotGlobalConfigRepository.
+          resolve.
+          getOrElse(new IrcBotGlobalConfig())
+      ).build
+      LOGGER.debug(String.format("get : finished(%s)", result))
+      result
     }
-    val result = Response.ok(
-      ircBotGlobalConfigRepository.
-        resolve.
-        getOrElse(new IrcBotGlobalConfig())
-    ).build
-    LOGGER.debug(String.format("get : finished(%s)", result))
-    result
   }
 
   @PUT
   @Consumes(Array(MediaType.APPLICATION_JSON))
   def put(config: IrcBotGlobalConfig,
           @Context request: HttpServletRequest): Response = {
+    LOGGER.debug("put : start(%s)".format(request))
     val username = userManager.getRemoteUsername(request)
     LOGGER.info("userName = %s".format(username))
-    if (username != null && !userManager.isSystemAdmin(username)) {
-      return Response.status(Status.UNAUTHORIZED).build
+    if (username != null && userManager.isSystemAdmin(username) == false) {
+      val response = Response.status(Status.UNAUTHORIZED).build
+      LOGGER.debug("put : finished(%s)".format(response))
+      response
+    } else {
+      ircBotGlobalConfigRepository.save(config)
+      val response = Response.noContent.build
+      LOGGER.debug("put : finished(%s)".format(response))
+      response
     }
-    LOGGER.info("save start = %s".format(config))
-    ircBotGlobalConfigRepository.save(config)
-    LOGGER.info("save end = %s".format(config))
-
-    Response.noContent.build
   }
 }

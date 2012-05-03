@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory
 import com.atlassian.sal.api.user.UserManager
 import com.github.j5ik2o.fecruircbot.servlet.ProjectServlet
 import com.github.j5ik2o.fecruircbot.domain.{IrcBotRepositoryChannelConfig, IrcBotRepositoryChannelConfigRepository}
+import javax.ws.rs.core.Response.Status
 
 @Path("/repositoryChannelConfig")
 class IrcBotRepositoryChannelConfigResource
@@ -29,14 +30,22 @@ class IrcBotRepositoryChannelConfigResource
   @Produces(Array(MediaType.APPLICATION_JSON))
   def get(@PathParam("key") key: String,
           @Context request: HttpServletRequest): Response = {
-    LOGGER.debug(String.format("get : start(%s,%s)", key, request))
-    val response = Response.ok(
-      ircBotRepositoryChannelConfigRepository.
-        resolve(key).
-        getOrElse(new IrcBotRepositoryChannelConfig())
-    ).build
-    LOGGER.debug(String.format("get : finished(%s)", response))
-    response
+    LOGGER.debug("get : start(%s,%s)".format(key, request))
+    val username = userManager.getRemoteUsername(request)
+    LOGGER.debug("userName = %s".format(username))
+    if (username != null && userManager.isSystemAdmin(username) == false) {
+      val response = Response.status(Status.UNAUTHORIZED).build
+      LOGGER.debug("get : finished(%s)".format(response))
+      response
+    } else {
+      val response = Response.ok(
+        ircBotRepositoryChannelConfigRepository.
+          resolve(key).
+          getOrElse(new IrcBotRepositoryChannelConfig())
+      ).build
+      LOGGER.debug(String.format("get : finished(%s)", response))
+      response
+    }
   }
 
   @PUT
@@ -45,8 +54,19 @@ class IrcBotRepositoryChannelConfigResource
   def put(@PathParam("key") key: String,
           config: IrcBotRepositoryChannelConfig,
           @Context request: HttpServletRequest): Response = {
-    ircBotRepositoryChannelConfigRepository.save(key, config)
-    Response.noContent.build
+    LOGGER.debug("put : start(%s,%s,%s)".format(key, config, request))
+    val username = userManager.getRemoteUsername(request)
+    LOGGER.info("userName = %s".format(username))
+    if (username != null && userManager.isSystemAdmin(username) == false) {
+      val response = Response.status(Status.UNAUTHORIZED).build
+      LOGGER.debug("put : finished(%s)".format(response))
+      response
+    } else {
+      ircBotRepositoryChannelConfigRepository.save(key, config)
+      val response = Response.noContent.build
+      LOGGER.debug("put : finished(%s)".format(response))
+      response
+    }
   }
 
 }

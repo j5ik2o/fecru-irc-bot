@@ -20,9 +20,9 @@ class AdminServlet
   private val isDebug = true
 
   override def doGet(request: HttpServletRequest, response: HttpServletResponse) {
-    LOGGER.debug(String.format("doGet : start(%s, %s)", request, response))
+    LOGGER.debug("doGet : start(%s, %s)".format(request, response))
     val username: String = userManager.getRemoteUsername(request)
-    if (username != null && !userManager.isSystemAdmin(username)) {
+    if (username != null && userManager.isSystemAdmin(username) == false) {
       redirectToLogin(request, response)
       LOGGER.debug("doGet : finished")
       return
@@ -44,20 +44,20 @@ class AdminServlet
   }
 
   private def redirectToLogin(request: HttpServletRequest, response: HttpServletResponse) {
-    LOGGER.debug(String.format("redirectToLogin : start(%s, %s)", request, response))
+    LOGGER.debug("redirectToLogin : start(%s, %s)".format(request, response))
     response.sendRedirect(loginUriProvider.getLoginUri(getUri(request)).toASCIIString)
     LOGGER.debug("redirectToLogin : finished")
   }
 
   private def getUri(request: HttpServletRequest): URI = {
-    LOGGER.debug(String.format("getUri : start(%s)", request))
+    LOGGER.debug("getUri : start(%s)".format(request))
     val builder = request.getRequestURL
     if (request.getQueryString != null) {
       builder.append("?")
       builder.append(request.getQueryString)
     }
     val result: URI = URI.create(builder.toString)
-    LOGGER.debug(String.format("getUri : finished(%s)", result))
-    return result
+    LOGGER.debug("getUri : finished(%s)".format(result))
+    result
   }
 }

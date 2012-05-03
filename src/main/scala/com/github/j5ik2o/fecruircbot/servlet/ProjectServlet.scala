@@ -21,11 +21,12 @@ class ProjectServlet
   extends HttpServlet {
 
   protected val LOGGER = LoggerFactory.getLogger("atlassian.plugin")
+  private val isDebug: Boolean = true
 
   override def doGet(request: HttpServletRequest, response: HttpServletResponse) {
-    LOGGER.debug(String.format("doGet : start(%s, %s)", request, response))
+    LOGGER.debug("doGet : start(%s, %s)".format(request, response))
     val username = userManager.getRemoteUsername(request)
-    if (username != null && !userManager.isSystemAdmin(username)) {
+    if (username != null && userManager.isSystemAdmin(username) == false) {
       redirectToLogin(request, response)
       LOGGER.debug("doGet : finished")
       return
@@ -48,7 +49,7 @@ class ProjectServlet
   }
 
   private def redirectToLogin(request: HttpServletRequest, response: HttpServletResponse) {
-    LOGGER.debug(String.format("redirectToLogin : start(%s, %s)", request, response))
+    LOGGER.debug("redirectToLogin : start(%s, %s)".format(request, response))
     response.sendRedirect(loginUriProvider.getLoginUri(getUri(request)).toASCIIString)
     LOGGER.debug("redirectToLogin : finshed")
   }
@@ -64,5 +65,4 @@ class ProjectServlet
     URI.create(builder.toString)
   }
 
-  private var isDebug: Boolean = true
 }
