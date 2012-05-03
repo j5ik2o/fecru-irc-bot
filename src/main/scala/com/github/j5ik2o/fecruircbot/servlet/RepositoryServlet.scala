@@ -15,10 +15,9 @@ class RepositoryServlet
   protected[this] val loginUriProvider: LoginUriProvider,
   renderer: TemplateRenderer,
   applicationProperties: ApplicationProperties
-  )
-  extends HttpServlet with ServletSupport {
+  ) extends HttpServlet with ServletSupport {
 
-  private var isDebug: Boolean = true
+  private val isDebug = true
 
   override def doGet(request: HttpServletRequest, response: HttpServletResponse) {
     LOGGER.debug(String.format("doGet : start(%s, %s)", request, response))
