@@ -2,12 +2,15 @@ package com.github.j5ik2o.fecruircbot
 
 import com.atlassian.sal.api.pluginsettings.{PluginSettingsFactory, PluginSettings}
 import com.atlassian.sal.api.transaction.{TransactionCallback, TransactionTemplate}
+import org.slf4j.LoggerFactory
 
 class IrcBotGlobalConfigRepository
 (
   pluginSettingsFactory: PluginSettingsFactory,
   transactionTemplate: TransactionTemplate
   ) {
+
+  private val LOGGER = LoggerFactory.getLogger("atlassian.plugin")
 
   protected def isIrcBotEnable(settings: PluginSettings) = {
     val r = settings.get(classOf[IrcBotGlobalConfig].getName + ".enable")
@@ -44,12 +47,15 @@ class IrcBotGlobalConfigRepository
   }
 
   def save(ircBotGlobalConfig: IrcBotGlobalConfig) {
-    val pluginSettings = pluginSettingsFactory.createGlobalSettings
+    LOGGER.info("ircBotGlobalConfig = %s".format(ircBotGlobalConfig))
     transactionTemplate.execute(new TransactionCallback[Unit] {
       def doInTransaction = {
+        LOGGER.info("transaction start")
+        val pluginSettings = pluginSettingsFactory.createGlobalSettings
         pluginSettings.put(classOf[IrcBotGlobalConfig].getName + ".enable", ircBotGlobalConfig.getEnable.toString)
         pluginSettings.put(classOf[IrcBotGlobalConfig].getName + ".ircServerName", ircBotGlobalConfig.getIrcServerName)
         pluginSettings.put(classOf[IrcBotGlobalConfig].getName + ".ircServerPort", ircBotGlobalConfig.getIrcServerPort.toString)
+        LOGGER.info("transaction end")
       }
     })
   }

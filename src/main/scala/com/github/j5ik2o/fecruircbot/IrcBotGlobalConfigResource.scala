@@ -50,11 +50,14 @@ class IrcBotGlobalConfigResource
   def put(config: IrcBotGlobalConfig,
           @Context request: HttpServletRequest): Response = {
     val username = userManager.getRemoteUsername(request)
-    LOGGER.debug("userName = " + username)
+    LOGGER.info("userName = %s".format(username))
     if (username != null && !userManager.isSystemAdmin(username)) {
       return Response.status(Status.UNAUTHORIZED).build
     }
+    LOGGER.info("save start = %s".format(config))
     ircBotGlobalConfigRepository.save(config)
+    LOGGER.info("save end = %s".format(config))
+
     Response.noContent.build
   }
 }

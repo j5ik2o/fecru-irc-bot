@@ -65,9 +65,11 @@ trait IrcConfigAccess {
 
   protected def sendMessage(key: String, message: String) {
     if (autoConnect == false) {
+      LOGGER.info("autoConnect = false")
       return
     }
     if (isEnableChannel(key) == false) {
+      LOGGER.info("isEnableChannel = false")
       return
     }
     try {
@@ -75,8 +77,10 @@ trait IrcConfigAccess {
       pircBot.joinChannel(channelName)
       if (isIrcBotChannelNotice(key)) {
         pircBot.sendNotice(channelName, message)
+        LOGGER.info("sendNotice(%s,%s)".format(channelName, message))
       } else {
         pircBot.sendMessage(channelName, message)
+        LOGGER.info("sendMessage(%s,%s)".format(channelName, message))
       }
     } catch {
       case e: NickAlreadyInUseException =>

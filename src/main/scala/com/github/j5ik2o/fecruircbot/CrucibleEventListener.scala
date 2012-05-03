@@ -10,10 +10,10 @@ import parser._
 import scala.collection.JavaConverters._
 import com.atlassian.crucible.spi.PermId
 import com.atlassian.crucible.spi.data._
-import com.atlassian.sal.api.pluginsettings.{PluginSettings, PluginSettingsFactory}
 import scala.util.control.Exception._
 import com.atlassian.crucible.spi.services.{NotFoundException, ReviewService, ProjectService}
 import scala._
+import scala.Predef._
 
 class CrucibleEventListener
 (
@@ -30,7 +30,7 @@ class CrucibleEventListener
   protected val name = "cru-irc-bot"
 
   protected def isIrcBotChannelEnable(key: String) = {
-    ircBotProjectChannelConfigRepository.resolve(key) match{
+    ircBotProjectChannelConfigRepository.resolve(key) match {
       case Some(IrcBotProjectChannelConfig(true, _, _)) => true
       case _ => false
     }
@@ -373,11 +373,16 @@ class CrucibleEventListener
 
   def onMessage(channel: String, sender: String, login: String, hostname: String, message: String) {
     LOGGER.info("c = %s, s = %s, l = %s, h = %s, m = %s".format(channel, sender, login, hostname, message))
-    if (isIrcBotEnable) {
+    if (isIrcBotEnable && message.startsWith("cru-irc-bot")) {
       val b = new BotParsers
-      val r = b.parse(message) match {
-        case ListOpecode(ReviewOperand(CommentSortType(Asc))) => listReview(true)
-        case ListOpecode(ReviewOperand(CommentSortType(Desc))) => listReview(false)
+      val r = try {
+        b.parse(message) match {
+          case ListOpecode(ReviewOperand(CommentSortType(Asc))) => listReview(true)
+          case ListOpecode(ReviewOperand(CommentSortType(Desc))) => listReview(false)
+        }
+      } catch {
+        case e: BotParseException =>
+          Seq(e.msg)
       }
       r.foreach {
         pircBot.sendMessage(channel, _)
