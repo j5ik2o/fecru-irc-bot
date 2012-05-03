@@ -43,7 +43,7 @@ class BotParsers extends RegexParsers {
     case Error(msg, _) => throw new BotParseException(msg)
   }
 
-  private lazy val instruction: Parser[Expr] = listReview
+  private lazy val instruction: Parser[Expr] = listOpecode
 
   private lazy val ascOrDesc: Parser[SortOrder] = ("asc" | "desc") ^^ {
     case s => SortOrder.resolve(s)
@@ -55,9 +55,12 @@ class BotParsers extends RegexParsers {
     case "time" ~ aos => new TimeSortType(aos.getOrElse(Asc))
   }
 
-  private lazy val listReview: Parser[Opecode] = "list" ~> "review" ~> opt(orderBy) ^^ {
-    case Some(v) => ListOpecode(ReviewOperand(v))
-    case None => ListOpecode(ReviewOperand(CommentSortType(Asc)))
+  private def listOperand(op: => Parser[SortType]): Parser[Operand] = "review" ~ opt(op) ^^ {
+    case "review" ~ opt => ReviewOperand(opt.getOrElse(CommentSortType(Asc)))
+  }
+
+  private lazy val listOpecode: Parser[Opecode] = "list" ~> listOperand(orderBy) ^^ {
+    case n => ListOpecode(n)
   }
 
 }

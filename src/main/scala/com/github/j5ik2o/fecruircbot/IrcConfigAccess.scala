@@ -50,19 +50,17 @@ trait IrcConfigAccess {
       None
   }
 
-  protected def autoConnect(settings: PluginSettings) {
-    if (pircBot.isConnected) {
-      return
-    }
-    val ircServerName = getIrcServerName(settings).get
-    LOGGER.debug("irc server name = " + ircServerName)
-    val ircServerPort = getIrcServerPort(settings)
-    LOGGER.debug("irc server port = " + ircServerPort)
-    if (ircServerPort != null && ircServerPort.getOrElse(0) != 0) {
-      pircBot.connect(ircServerName, ircServerPort.get)
-    } else {
-      pircBot.connect(ircServerName)
-    }
+  protected def autoConnect(settings: PluginSettings): Boolean = {
+    if (pircBot.isConnected == false) {
+      getIrcServerName(settings) match {
+        case None => false
+        case Some(host) => getIrcServerPort(settings) match {
+          case None => pircBot.connect(host); true
+          case Some(port) => pircBot.connect(host, port); true
+        }
+      }
+    } else
+      true
   }
 
   protected def sendMessages(key: String, messages: Seq[String]) {
@@ -72,20 +70,30 @@ trait IrcConfigAccess {
     }
   }
 
-  protected def isIrcBotChannelEnable(settings: PluginSettings, key: String):Boolean
-  protected def isIrcBotChannelNotice(settings: PluginSettings, key: String):Boolean
-  protected def getIrcBotChannelName(settings: PluginSettings, key: String):String
+  protected def isIrcBotChannelEnable(settings: PluginSettings, key: String): Boolean
+
+  protected def isIrcBotChannelNotice(settings: PluginSettings, key: String): Boolean
+
+  protected def getIrcBotChannelName(settings: PluginSettings, key: String): String
+
+  protected def isEnableChannel(settings: PluginSettings, key: String) = {
+    if (isIrcBotEnable(settings) == false ||
+      isIrcBotChannelEnable(settings, key) == false) {
+      LOGGER.info("有効になっていません (%s)".format(key))
+      false
+    } else true
+  }
 
 
   protected def sendMessage(key: String, message: String) {
     val settings = pluginSettingsFactory.createGlobalSettings
-    if (isIrcBotEnable(settings) == false ||
-      isIrcBotChannelEnable(settings, key) == false) {
-      LOGGER.info("有効になっていません (%s)".format(key))
+    if (autoConnect(settings) == false) {
+      return
+    }
+    if (isEnableChannel(settings, key) == false) {
       return
     }
     try {
-      autoConnect(settings)
       val channelName = getIrcBotChannelName(settings, key)
       pircBot.joinChannel(channelName)
       if (isIrcBotChannelNotice(settings, key)) {

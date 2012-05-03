@@ -11,16 +11,15 @@ import scala.collection.JavaConverters._
 import com.atlassian.crucible.spi.PermId
 import com.atlassian.crucible.spi.data._
 import com.atlassian.sal.api.pluginsettings.{PluginSettings, PluginSettingsFactory}
-import com.atlassian.crucible.spi.services.{NotFoundException, ReviewService, ProjectService}
 import scala.util.control.Exception._
-import scala.None
+import com.atlassian.crucible.spi.services.{NotFoundException, ReviewService, ProjectService}
 
 class CrucibleEventListener
 (
   eventPublisher: EventPublisher,
   applicationProperties: ApplicationProperties,
   reviewService: ReviewService,
-  projectService: ProjectService,
+  protected val projectService: ProjectService,
   protected val pluginSettingsFactory: PluginSettingsFactory
   )
   extends DisposableBean with InitializingBean with IrcConfigAccess {
@@ -190,7 +189,7 @@ class CrucibleEventListener
   }
 
   @EventListener
-  def onReviewCommentCreate(event: CommentCreatedEvent) {
+  def onReviewCommentCreated(event: CommentCreatedEvent) {
     val reviewData = reviewService.getReviewDetails(event.getReviewId)
     val projectData = projectService.getProject(reviewData.getProjectKey)
     sendMessages(
@@ -255,7 +254,7 @@ class CrucibleEventListener
   }
 
   @EventListener
-  def onReviewUpdate(event: ReviewUpdatedEvent) {
+  def onReviewUpdated(event: ReviewUpdatedEvent) {
     val reviewData = reviewService.getReviewDetails(event.getReviewId)
     val projectData = projectService.getProject(reviewData.getProjectKey)
     sendMessages(
@@ -267,7 +266,7 @@ class CrucibleEventListener
   }
 
   @EventListener
-  def onReviewUpdate(event: ReviewDeletedEvent) {
+  def onReviewDeleted(event: ReviewDeletedEvent) {
     val reviewData = reviewService.getReviewDetails(event.getReviewId)
     val projectData = projectService.getProject(reviewData.getProjectKey)
     sendMessages(
@@ -348,20 +347,29 @@ class CrucibleEventListener
         "すべてのレビューアがレビューを久しく完了していません"))
   }
 
-  def listReview(asc:Boolean) = {
+  def listReview(asc: Boolean) = {
     val r = reviewService.getAllReviews(true)
     if (r != null) {
       r.asScala.filter {
         e =>
           e.getState == ReviewData.State.Review
+      }.map {
+        e =>
+          (e, reviewService.getAllRevisionComments(e.getPermaId))
       }.sortWith(
         (o1, o2) =>
-          (o1.asInstanceOf[DetailedReviewData].getVersionedComments.comments.size() <
-            o2.asInstanceOf[DetailedReviewData].getVersionedComments.comments.size() == asc)
+          ((o1._2.size < o2._2.size) == asc)
       ).take(10).map {
         e =>
-          "[%s] %s , a:%s, m:%s : %s".
-            format(e.getPermaId.getId, e.getName, formattedUser(e.getAuthor), formattedUser(e.getModerator), getReviewUrl(e.getPermaId))
+          "[%s:%d] %s , a:%s, m:%s : %s".
+            format(
+            e._1.getPermaId.getId,
+            e._2.size,
+            e._1.getName,
+            formattedUser(e._1.getAuthor),
+            formattedUser(e._1.getModerator),
+            getReviewUrl(e._1.getPermaId)
+          )
       }
     } else
       List.empty[String]
@@ -374,7 +382,7 @@ class CrucibleEventListener
       val b = new BotParsers
       val r = b.parse(message) match {
         case ListOpecode(ReviewOperand(CommentSortType(Asc))) => listReview(true)
-        case ListOpecode(ReviewOperand(CommentSortType(Desc))) => listReview(true)
+        case ListOpecode(ReviewOperand(CommentSortType(Desc))) => listReview(false)
       }
       r.foreach {
         pircBot.sendMessage(channel, _)
@@ -386,9 +394,25 @@ class CrucibleEventListener
     eventPublisher.unregister(this)
   }
 
-  def afterPropertiesSet {
-    eventPublisher.register(this)
+  protected def connectAllChannel = {
+    val settings = pluginSettingsFactory.createGlobalSettings
+    autoConnect(settings)
+    val p = projectService.getAllProjects
+    if (p != null) {
+      val projects = p.asScala
+      projects.map(_.getKey).filter(
+        isEnableChannel(settings, _)
+      ).foreach {
+        key =>
+          val channelName = getIrcBotChannelName(settings, key)
+          pircBot.joinChannel(channelName)
+      }
+    }
+  }
 
+  def afterPropertiesSet {
+    connectAllChannel
+    eventPublisher.register(this)
   }
 
 }

@@ -8,7 +8,7 @@ class BotParsersTest extends FunSuite {
     val b = new BotParsers
     println(b.parse("list review"))
   }
-  test("list review order(comment)"){
+  test("list review order by comment asc"){
     val b = new BotParsers
     println(b.parse("list review order by comment asc"))
   }
